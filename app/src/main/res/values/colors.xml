@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="waterDeep">#050E1F</color>
+    <color name="waterMid">#0A2A4A</color>
+    <color name="waterDark">#0D3D6B</color>
+    <color name="waterCyan">#00B4D8</color>
+    <color name="waterCyanLight">#90E0EF</color>
+    <color name="waterFoam">#CAF0F8</color>
+    <color name="waterTeal">#0096C7</color>
+    <color name="waterAqua">#48CAE4</color>
+    <color name="glassWhite">#26FFFFFF</color>
+    <color name="glassBorder">#40FFFFFF</color>
+    <color name="glassText">#CCFFFFFF</color>
+    <color name="secureGreen">#4CAF50</color>
+    <color name="insecureRed">#F44336</color>
+    <color name="warningAmber">#FF9800</color>
+    <color name="textPrimary">#FFFFFF</color>
+    <color name="textSecondary">#CAF0F8</color>
+    <color name="textHint">#80CAF0F8</color>
+</resources>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.BrahmanBrowser" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/waterCyan</item>
+        <item name="colorPrimaryVariant">@color/waterTeal</item>
+        <item name="colorSecondary">@color/waterAqua</item>
+        <item name="colorSecondaryVariant">@color/waterCyanLight</item>
+        <item name="android:windowBackground">@color/waterDeep</item>
+        <item name="android:statusBarColor">@color/waterDeep</item>
+        <item name="android:navigationBarColor">@color/waterDeep</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="colorSurface">@color/waterMid</item>
+        <item name="colorOnSurface">@color/textPrimary</item>
+        <item name="android:textColorPrimary">@color/textPrimary</item>
+        <item name="android:textColorSecondary">@color/textSecondary</item>
+    </style>
+</resources>

@@ -1,0 +1,71 @@
+###########################################
+# Brahman Browser - Android .gitignore
+# Brahman Labs
+###########################################
+
+# Built application files
+*.apk
+*.aar
+*.ap_
+*.aab
+*.dex
+
+# Java/Kotlin class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+
+# Gradle files
+.gradle/
+build/
+**/build/
+
+# Kotlin 2.0+ data directory
+.kotlin/
+
+# Local configuration (contains your SDK path - never share this)
+local.properties
+
+# Log files
+*.log
+
+# Android Studio / IntelliJ IDEA
+*.iml
+*.iws
+*.ipr
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/assetWizardSettings.xml
+.idea/dictionaries
+.idea/libraries
+.idea/caches
+.idea/modules.xml
+.idea/navEditor.xml
+.idea/usage.statistics.xml
+.idea/httpRequests/
+
+# Keystore files (NEVER commit these - contains signing keys)
+*.jks
+*.keystore
+
+# Proguard
+proguard/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Captures
+captures/
+
+# Navigation editor temp
+.navigation/
+
+# NDK
+ndkBuild/
+.externalNativeBuild/
+cmake-build-*/
