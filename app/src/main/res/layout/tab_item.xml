@@ -6,8 +6,17 @@
     android:gravity="center_vertical"
     android:background="@drawable/bg_tab_item"
     android:layout_marginEnd="6dp"
-    android:paddingStart="10dp"
-    android:paddingEnd="6dp">
+    android:paddingStart="8dp"
+    android:paddingEnd="4dp">
+
+    <ImageView
+        android:id="@+id/tabFavicon"
+        android:layout_width="16dp"
+        android:layout_height="16dp"
+        android:layout_marginEnd="6dp"
+        android:src="@drawable/ic_home"
+        android:scaleType="fitCenter"
+        android:contentDescription="Favicon"/>
 
     <TextView
         android:id="@+id/tabTitle"

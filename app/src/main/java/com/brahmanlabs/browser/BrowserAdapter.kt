@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
@@ -16,6 +17,7 @@ class BrowserAdapter(
     class TabViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val title: TextView = view.findViewById(R.id.tabTitle)
         val closeBtn: ImageButton = view.findViewById(R.id.btnCloseTab)
+        val favicon: ImageView = view.findViewById(R.id.tabFavicon)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TabViewHolder {
@@ -25,9 +27,16 @@ class BrowserAdapter(
     }
 
     override fun onBindViewHolder(holder: TabViewHolder, position: Int) {
-        holder.title.text = tabs[position].title.ifEmpty { "New Tab" }
+        val tab = tabs[position]
+        holder.title.text = tab.title.ifEmpty { "New Tab" }
         holder.itemView.setOnClickListener { onTabClick(position) }
         holder.closeBtn.setOnClickListener { onTabClose(position) }
+
+        if (tab.favicon != null) {
+            holder.favicon.setImageBitmap(tab.favicon)
+        } else {
+            holder.favicon.setImageResource(R.drawable.ic_home)
+        }
     }
 
     override fun getItemCount(): Int = tabs.size
