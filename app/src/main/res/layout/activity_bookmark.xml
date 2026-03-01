@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_water_gradient">
+
+    <LinearLayout
+        android:id="@+id/bookmarkTopBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:background="@drawable/bg_top_bar">
+
+        <ImageButton
+            android:id="@+id/btnBookmarkBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_nav_button"
+            android:src="@drawable/ic_back"
+            android:padding="10dp"
+            android:contentDescription="Back"/>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Bookmarks"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginStart="12dp"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bookmarkSearchLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/bookmarkTopBar"
+        android:padding="12dp">
+
+        <EditText
+            android:id="@+id/bookmarkSearch"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:hint="Search bookmarks..."
+            android:textColorHint="#80CAF0F8"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_address_bar"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:singleLine="true"
+            android:inputType="text"
+            android:imeOptions="actionSearch"/>
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/emptyBookmarkText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:text="No bookmarks yet&#10;Tap ⭐ to save a page"
+        android:textColor="#80CAF0F8"
+        android:textSize="16sp"
+        android:gravity="center"
+        android:visibility="gone"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/bookmarkRecycler"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@id/bookmarkSearchLayout"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp"/>
+
+</RelativeLayout>

@@ -2,20 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
     <title>New Tab</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-        body {
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: linear-gradient(135deg, #050E1F 0%, #0A2A4A 50%, #0D3D6B 100%);
             min-height: 100vh;
             color: white;
-            overflow-x: hidden;
         }
 
-        /* Animated water bubbles */
         .bubbles {
             position: fixed;
             width: 100%;
@@ -24,6 +30,7 @@
             left: 0;
             pointer-events: none;
             z-index: 0;
+            overflow: hidden;
         }
 
         .bubble {
@@ -41,48 +48,49 @@
         .bubble:nth-child(4)  { width: 30px;  height: 30px;  left: 50%; animation-duration: 7s;  animation-delay: 0.5s; }
         .bubble:nth-child(5)  { width: 15px;  height: 15px;  left: 65%; animation-duration: 6s;  animation-delay: 3s; }
         .bubble:nth-child(6)  { width: 50px;  height: 50px;  left: 80%; animation-duration: 9s;  animation-delay: 1.5s; }
-        .bubble:nth-child(7)  { width: 25px;  height: 25px;  left: 90%; animation-duration: 5s;  animation-delay: 2.5s; }
+        .bubble:nth-child(7)  { width: 25px;  height: 25px;  left: 88%; animation-duration: 5s;  animation-delay: 2.5s; }
 
         @keyframes rise {
             0%   { bottom: -100px; opacity: 0; transform: translateX(0); }
             10%  { opacity: 1; }
             90%  { opacity: 0.5; }
-            100% { bottom: 110vh; opacity: 0; transform: translateX(30px); }
+            100% { bottom: 110vh; opacity: 0; transform: translateX(20px); }
         }
 
-        /* Main content */
         .container {
             position: relative;
             z-index: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 60px 24px 40px;
-            min-height: 100vh;
+            padding: 48px 20px 40px;
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden;
         }
 
-        /* Logo & Branding */
         .logo-section {
             text-align: center;
-            margin-bottom: 48px;
+            margin-bottom: 32px;
             animation: fadeInDown 0.8s ease;
+            width: 100%;
         }
 
         .logo-icon {
-            width: 72px;
-            height: 72px;
+            width: 68px;
+            height: 68px;
             background: linear-gradient(135deg, #00B4D8, #0096C7);
-            border-radius: 24px;
+            border-radius: 22px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 16px;
+            margin: 0 auto 12px;
             box-shadow: 0 8px 32px rgba(0, 180, 216, 0.4);
-            font-size: 36px;
+            font-size: 34px;
         }
 
         .brand-name {
-            font-size: 28px;
+            font-size: 26px;
             font-weight: 700;
             background: linear-gradient(90deg, #CAF0F8, #00B4D8);
             -webkit-background-clip: text;
@@ -91,38 +99,37 @@
         }
 
         .brand-tagline {
-            font-size: 13px;
+            font-size: 11px;
             color: rgba(202, 240, 248, 0.6);
             margin-top: 4px;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
         }
 
-        /* DateTime */
         .datetime {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 32px;
             animation: fadeInDown 0.8s ease 0.1s both;
         }
 
         .time {
-            font-size: 48px;
+            font-size: 52px;
             font-weight: 200;
             letter-spacing: -1px;
             color: #CAF0F8;
+            line-height: 1;
         }
 
         .date {
-            font-size: 14px;
+            font-size: 13px;
             color: rgba(202, 240, 248, 0.6);
-            margin-top: 4px;
+            margin-top: 6px;
         }
 
-        /* Search Bar */
         .search-section {
             width: 100%;
-            max-width: 600px;
-            margin-bottom: 48px;
+            max-width: 100%;
+            margin-bottom: 32px;
             animation: fadeInUp 0.8s ease 0.2s both;
         }
 
@@ -132,9 +139,9 @@
             background: rgba(255,255,255,0.12);
             border: 1.5px solid rgba(255,255,255,0.2);
             border-radius: 32px;
-            padding: 0 20px;
-            height: 56px;
-            backdrop-filter: blur(10px);
+            padding: 0 18px;
+            height: 52px;
+            width: 100%;
             transition: all 0.3s ease;
         }
 
@@ -145,9 +152,10 @@
         }
 
         .search-icon {
-            font-size: 18px;
-            margin-right: 12px;
+            font-size: 16px;
+            margin-right: 10px;
             opacity: 0.7;
+            flex-shrink: 0;
         }
 
         .search-input {
@@ -156,8 +164,10 @@
             border: none;
             outline: none;
             color: white;
-            font-size: 16px;
+            font-size: 15px;
             font-family: inherit;
+            width: 100%;
+            min-width: 0;
         }
 
         .search-input::placeholder {
@@ -167,12 +177,13 @@
         .search-engines {
             display: flex;
             gap: 8px;
-            margin-top: 12px;
+            margin-top: 10px;
             justify-content: center;
+            flex-wrap: wrap;
         }
 
         .engine-btn {
-            padding: 6px 16px;
+            padding: 5px 14px;
             border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.2);
             background: rgba(255,255,255,0.08);
@@ -180,6 +191,7 @@
             font-size: 12px;
             cursor: pointer;
             transition: all 0.2s ease;
+            -webkit-appearance: none;
         }
 
         .engine-btn.active {
@@ -188,92 +200,93 @@
             color: #CAF0F8;
         }
 
-        /* Quick Links */
+        .wave-divider {
+            width: 100%;
+            margin: 24px 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0,180,216,0.3), transparent);
+        }
+
         .quick-links {
             width: 100%;
-            max-width: 600px;
+            max-width: 100%;
             animation: fadeInUp 0.8s ease 0.3s both;
         }
 
         .section-title {
-            font-size: 12px;
+            font-size: 11px;
             color: rgba(202, 240, 248, 0.5);
             letter-spacing: 1.5px;
             text-transform: uppercase;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
             text-align: center;
         }
 
         .links-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
+            gap: 10px;
+            width: 100%;
         }
 
         .quick-link {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
-            padding: 16px 8px;
+            gap: 6px;
+            padding: 14px 4px;
             background: rgba(255,255,255,0.08);
             border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 20px;
+            border-radius: 18px;
             cursor: pointer;
             text-decoration: none;
             color: inherit;
-            transition: all 0.25s ease;
-            -webkit-tap-highlight-color: transparent;
+            transition: all 0.2s ease;
+            min-width: 0;
         }
 
         .quick-link:active {
-            transform: scale(0.94);
+            transform: scale(0.93);
             background: rgba(0, 180, 216, 0.2);
         }
 
         .link-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 14px;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 22px;
+            font-size: 20px;
+            flex-shrink: 0;
         }
 
         .link-name {
-            font-size: 11px;
+            font-size: 10px;
             color: rgba(202, 240, 248, 0.8);
             text-align: center;
-        }
-
-        /* Wave divider */
-        .wave-divider {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             width: 100%;
-            margin: 32px 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(0,180,216,0.3), transparent);
         }
 
-        /* Animations */
-        @keyframes fadeInDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Footer */
         .footer {
-            margin-top: auto;
-            padding-top: 40px;
+            margin-top: 36px;
             text-align: center;
             color: rgba(202, 240, 248, 0.3);
             font-size: 11px;
             animation: fadeInUp 0.8s ease 0.4s both;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -291,20 +304,17 @@
 
 <div class="container">
 
-    <!-- Logo -->
     <div class="logo-section">
         <div class="logo-icon">🌊</div>
         <div class="brand-name">Brahman Browser</div>
         <div class="brand-tagline">by Brahman Labs</div>
     </div>
 
-    <!-- Date & Time -->
     <div class="datetime">
         <div class="time" id="clock">00:00</div>
         <div class="date" id="dateDisplay"></div>
     </div>
 
-    <!-- Search -->
     <div class="search-section">
         <div class="search-container">
             <span class="search-icon">🔍</span>
@@ -319,15 +329,14 @@
                 spellcheck="false"/>
         </div>
         <div class="search-engines">
-            <button class="engine-btn active" onclick="setEngine('google')">Google</button>
-            <button class="engine-btn" onclick="setEngine('bing')">Bing</button>
-            <button class="engine-btn" onclick="setEngine('duckduckgo')">DuckDuckGo</button>
+            <button class="engine-btn active" onclick="setEngine('google', this)">Google</button>
+            <button class="engine-btn" onclick="setEngine('bing', this)">Bing</button>
+            <button class="engine-btn" onclick="setEngine('duckduckgo', this)">DuckDuckGo</button>
         </div>
     </div>
 
     <div class="wave-divider"></div>
 
-    <!-- Quick Links -->
     <div class="quick-links">
         <div class="section-title">Quick Access</div>
         <div class="links-grid">
@@ -373,13 +382,11 @@
 </div>
 
 <script>
-    // Clock
     function updateClock() {
         const now = new Date();
         const h = String(now.getHours()).padStart(2, '0');
         const m = String(now.getMinutes()).padStart(2, '0');
         document.getElementById('clock').textContent = h + ':' + m;
-
         const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
         const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
         document.getElementById('dateDisplay').textContent =
@@ -388,7 +395,6 @@
     updateClock();
     setInterval(updateClock, 1000);
 
-    // Search engine
     let currentEngine = 'google';
     const engines = {
         google: 'https://www.google.com/search?q=',
@@ -396,13 +402,12 @@
         duckduckgo: 'https://duckduckgo.com/?q='
     };
 
-    function setEngine(engine) {
+    function setEngine(engine, btn) {
         currentEngine = engine;
-        document.querySelectorAll('.engine-btn').forEach(btn => btn.classList.remove('active'));
-        event.target.classList.add('active');
+        document.querySelectorAll('.engine-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
     }
 
-    // Search on Enter
     document.getElementById('searchInput').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             const query = this.value.trim();
@@ -419,7 +424,6 @@
         }
     });
 
-    // Navigate via Android bridge
     function navigate(url) {
         if (window.BrahmanBridge) {
             window.BrahmanBridge.loadUrl(url);
@@ -427,11 +431,6 @@
             window.location.href = url;
         }
     }
-
-    // Auto focus search
-    window.onload = function() {
-        setTimeout(() => document.getElementById('searchInput').focus(), 300);
-    };
 </script>
 </body>
 </html>

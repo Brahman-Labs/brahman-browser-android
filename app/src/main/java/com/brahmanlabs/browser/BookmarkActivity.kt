@@ -1,0 +1,80 @@
+package com.brahmanlabs.browser
+
+import android.content.Intent
+import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.View
+import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.launch
+
+class BookmarkActivity : AppCompatActivity() {
+
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var searchBar: EditText
+    private lateinit var btnBack: ImageButton
+    private lateinit var emptyText: TextView
+    private lateinit var adapter: BookmarkAdapter
+    private lateinit var db: BrahmanDatabase
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_bookmark)
+
+        db = BrahmanDatabase.getInstance(this)
+
+        recyclerView = findViewById(R.id.bookmarkRecycler)
+        searchBar = findViewById(R.id.bookmarkSearch)
+        btnBack = findViewById(R.id.btnBookmarkBack)
+        emptyText = findViewById(R.id.emptyBookmarkText)
+
+        adapter = BookmarkAdapter(
+            items = emptyList(),
+            onItemClick = { item ->
+                val intent = Intent()
+                intent.putExtra("url", item.url)
+                setResult(RESULT_OK, intent)
+                finish()
+            },
+            onDeleteClick = { item ->
+                lifecycleScope.launch {
+                    db.bookmarkDao().deleteById(item.id)
+                    loadBookmarks()
+                }
+            }
+        )
+
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = adapter
+
+        btnBack.setOnClickListener { finish() }
+
+        searchBar.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                lifecycleScope.launch {
+                    val results = db.bookmarkDao().search("%${s.toString()}%")
+                    adapter.updateList(results)
+                    emptyText.visibility = if (results.isEmpty()) View.VISIBLE else View.GONE
+                }
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        loadBookmarks()
+    }
+
+    private fun loadBookmarks() {
+        lifecycleScope.launch {
+            val items = db.bookmarkDao().getAll()
+            adapter.updateList(items)
+            emptyText.visibility = if (items.isEmpty()) View.VISIBLE else View.GONE
+        }
+    }
+}
