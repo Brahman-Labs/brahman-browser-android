@@ -170,9 +170,7 @@
             min-width: 0;
         }
 
-        .search-input::placeholder {
-            color: rgba(202, 240, 248, 0.5);
-        }
+        .search-input::placeholder { color: rgba(202, 240, 248, 0.5); }
 
         .search-engines {
             display: flex;
@@ -239,7 +237,6 @@
             border: 1px solid rgba(255,255,255,0.12);
             border-radius: 18px;
             cursor: pointer;
-            text-decoration: none;
             color: inherit;
             transition: all 0.2s ease;
             min-width: 0;
@@ -328,10 +325,10 @@
                 autocapitalize="off"
                 spellcheck="false"/>
         </div>
-        <div class="search-engines">
-            <button class="engine-btn active" onclick="setEngine('google', this)">Google</button>
-            <button class="engine-btn" onclick="setEngine('bing', this)">Bing</button>
-            <button class="engine-btn" onclick="setEngine('duckduckgo', this)">DuckDuckGo</button>
+        <div class="search-engines" id="engineButtons">
+            <button class="engine-btn" id="btn-google" onclick="setEngine('google', this)">Google</button>
+            <button class="engine-btn" id="btn-bing" onclick="setEngine('bing', this)">Bing</button>
+            <button class="engine-btn" id="btn-duckduckgo" onclick="setEngine('duckduckgo', this)">DuckDuckGo</button>
         </div>
     </div>
 
@@ -375,13 +372,11 @@
         </div>
     </div>
 
-    <div class="footer">
-        Brahman Browser • Private & Secure 🔒
-    </div>
-
+    <div class="footer">Brahman Browser • Private & Secure 🔒</div>
 </div>
 
 <script>
+    // Clock
     function updateClock() {
         const now = new Date();
         const h = String(now.getHours()).padStart(2, '0');
@@ -395,12 +390,27 @@
     updateClock();
     setInterval(updateClock, 1000);
 
+    // BUG 5 FIX: Read search engine from BrahmanPreferences via bridge
     let currentEngine = 'google';
     const engines = {
         google: 'https://www.google.com/search?q=',
         bing: 'https://www.bing.com/search?q=',
         duckduckgo: 'https://duckduckgo.com/?q='
     };
+
+    function initSearchEngine() {
+        try {
+            if (window.BrahmanBridge) {
+                currentEngine = window.BrahmanBridge.getSearchEngine() || 'google';
+            }
+        } catch(e) {
+            currentEngine = 'google';
+        }
+        // Highlight the active engine button
+        document.querySelectorAll('.engine-btn').forEach(b => b.classList.remove('active'));
+        const activeBtn = document.getElementById('btn-' + currentEngine);
+        if (activeBtn) activeBtn.classList.add('active');
+    }
 
     function setEngine(engine, btn) {
         currentEngine = engine;
@@ -431,6 +441,11 @@
             window.location.href = url;
         }
     }
+
+    // Init after page loads
+    window.addEventListener('load', function() {
+        initSearchEngine();
+    });
 </script>
 </body>
 </html>

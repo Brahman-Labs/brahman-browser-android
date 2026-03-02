@@ -5,103 +5,130 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_water_gradient">
 
+    <!-- Top Glow -->
     <View
         android:id="@+id/topGlow"
         android:layout_width="match_parent"
-        android:layout_height="120dp"
+        android:layout_height="80dp"
         android:layout_alignParentTop="true"
         android:background="@drawable/bg_top_bar"/>
 
+    <!-- Top Bar wrapper -->
     <LinearLayout
         android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:orientation="vertical"
-        android:paddingTop="8dp"
-        android:paddingBottom="4dp"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp">
+        android:paddingTop="6dp"
+        android:paddingBottom="2dp"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp">
 
-        <LinearLayout
+        <!-- ONE ROW using RelativeLayout so buttons never shift -->
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="@drawable/bg_address_bar"
-            android:paddingStart="12dp"
-            android:paddingEnd="4dp">
+            android:layout_height="42dp">
 
-            <ImageView
-                android:id="@+id/lockIcon"
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@drawable/ic_lock"
-                android:contentDescription="Secure"
-                android:visibility="gone"/>
-
-            <EditText
-                android:id="@+id/addressBar"
-                android:layout_width="0dp"
+            <!-- Buttons anchored HARD to the right — never move -->
+            <LinearLayout
+                android:id="@+id/actionButtons"
+                android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:hint="Search or type URL"
-                android:textColorHint="#80CAF0F8"
-                android:inputType="textUri"
-                android:singleLine="true"
-                android:imeOptions="actionGo"
-                android:background="@android:color/transparent"
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"/>
+                android:layout_alignParentEnd="true"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-            <ImageButton
-                android:id="@+id/btnBookmark"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@drawable/bg_nav_button"
-                android:src="@drawable/ic_bookmark"
-                android:padding="9dp"
-                android:contentDescription="Bookmark"/>
+                <ImageButton
+                    android:id="@+id/btnBookmark"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_nav_button"
+                    android:src="@drawable/ic_bookmark"
+                    android:padding="8dp"
+                    android:alpha="0.4"
+                    android:contentDescription="Bookmark"/>
 
-            <ImageButton
-                android:id="@+id/btnIncognito"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@drawable/bg_nav_button"
-                android:src="@drawable/ic_incognito"
-                android:padding="9dp"
-                android:alpha="0.5"
-                android:contentDescription="Incognito"/>
+                <ImageButton
+                    android:id="@+id/btnIncognito"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_nav_button"
+                    android:src="@drawable/ic_incognito"
+                    android:padding="8dp"
+                    android:alpha="0.5"
+                    android:contentDescription="Incognito"/>
 
-            <ImageButton
-                android:id="@+id/btnDesktop"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@drawable/bg_nav_button"
-                android:src="@drawable/ic_desktop"
-                android:padding="9dp"
-                android:alpha="0.5"
-                android:contentDescription="Desktop Mode"/>
+                <ImageButton
+                    android:id="@+id/btnDesktop"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_nav_button"
+                    android:src="@drawable/ic_desktop"
+                    android:padding="8dp"
+                    android:alpha="0.5"
+                    android:contentDescription="Desktop Mode"/>
 
-            <ImageButton
-                android:id="@+id/btnMore"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:background="@drawable/bg_nav_button"
-                android:src="@drawable/ic_more"
-                android:padding="9dp"
-                android:contentDescription="More Options"/>
+                <ImageButton
+                    android:id="@+id/btnMore"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_nav_button"
+                    android:src="@drawable/ic_more"
+                    android:padding="8dp"
+                    android:contentDescription="More Options"/>
 
-        </LinearLayout>
+            </LinearLayout>
 
+            <!-- Address bar pill fills space to the LEFT of buttons -->
+            <!-- GONE on New Tab → buttons stay exactly where they are -->
+            <LinearLayout
+                android:id="@+id/addressBarRow"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_toStartOf="@id/actionButtons"
+                android:layout_marginEnd="4dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_address_bar"
+                android:paddingStart="10dp"
+                android:paddingEnd="6dp"
+                android:visibility="gone">
+
+                <ImageView
+                    android:id="@+id/lockIcon"
+                    android:layout_width="14dp"
+                    android:layout_height="14dp"
+                    android:src="@drawable/ic_lock"
+                    android:contentDescription="Secure"
+                    android:visibility="gone"
+                    android:layout_marginEnd="4dp"/>
+
+                <EditText
+                    android:id="@+id/addressBar"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:hint="Search or type URL"
+                    android:textColorHint="#80CAF0F8"
+                    android:inputType="textUri"
+                    android:singleLine="true"
+                    android:imeOptions="actionGo"
+                    android:background="@android:color/transparent"
+                    android:textColor="#FFFFFF"
+                    android:textSize="13sp"/>
+
+            </LinearLayout>
+
+        </RelativeLayout>
+
+        <!-- Progress Bar -->
         <ProgressBar
             android:id="@+id/progressBar"
             style="?android:attr/progressBarStyleHorizontal"
             android:layout_width="match_parent"
             android:layout_height="3dp"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="2dp"
             android:layout_marginStart="4dp"
             android:layout_marginEnd="4dp"
             android:progressDrawable="@drawable/progress_water"
@@ -110,17 +137,18 @@
 
     </LinearLayout>
 
+    <!-- Tab Strip -->
     <LinearLayout
         android:id="@+id/tabsRow"
         android:layout_width="match_parent"
-        android:layout_height="52dp"
+        android:layout_height="46dp"
         android:layout_below="@id/topBar"
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingStart="8dp"
         android:paddingEnd="8dp"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp">
+        android:paddingTop="3dp"
+        android:paddingBottom="3dp">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/tabRecycler"
@@ -131,15 +159,16 @@
 
         <ImageButton
             android:id="@+id/btnNewTab"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:background="@drawable/bg_tab_item"
             android:src="@drawable/ic_add_tab"
-            android:padding="10dp"
+            android:padding="9dp"
             android:contentDescription="New Tab"/>
 
     </LinearLayout>
 
+    <!-- WebView -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefresh"
         android:layout_width="match_parent"
@@ -154,68 +183,69 @@
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
+    <!-- Bottom Navigation Bar -->
     <LinearLayout
         android:id="@+id/navigationBar"
         android:layout_width="match_parent"
-        android:layout_height="64dp"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:orientation="horizontal"
         android:gravity="center"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:paddingTop="8dp"
-        android:paddingBottom="8dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
         android:background="@drawable/bg_top_bar">
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="52dp"
             android:orientation="horizontal"
             android:gravity="center"
             android:background="@drawable/bg_nav_bar"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp">
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp">
 
             <ImageButton
                 android:id="@+id/btnBack"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="44dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_nav_button"
                 android:src="@drawable/ic_back"
-                android:padding="12dp"
+                android:padding="11dp"
                 android:alpha="0.4"
                 android:contentDescription="Back"/>
 
             <ImageButton
                 android:id="@+id/btnForward"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="44dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_nav_button"
                 android:src="@drawable/ic_forward"
-                android:padding="12dp"
+                android:padding="11dp"
                 android:alpha="0.4"
                 android:contentDescription="Forward"/>
 
             <ImageButton
                 android:id="@+id/btnHome"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="44dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_nav_button"
                 android:src="@drawable/ic_home"
-                android:padding="11dp"
+                android:padding="10dp"
                 android:contentDescription="Home"/>
 
             <ImageButton
                 android:id="@+id/btnRefresh"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="44dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_nav_button"
                 android:src="@drawable/ic_refresh"
-                android:padding="12dp"
+                android:padding="11dp"
                 android:contentDescription="Refresh"/>
 
         </LinearLayout>

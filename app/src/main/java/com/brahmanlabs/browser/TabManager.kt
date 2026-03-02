@@ -2,41 +2,39 @@ package com.brahmanlabs.browser
 
 class TabManager {
     val tabs = mutableListOf<BrowserTab>()
-    var currentIndex = 0
-        private set
+    private var currentIndex = 0
 
     fun addTab(tab: BrowserTab) {
         tabs.add(tab)
         currentIndex = tabs.lastIndex
     }
 
-    fun removeTab(index: Int) {
-        if (index < 0 || index >= tabs.size) return
-        tabs.removeAt(index)
-        currentIndex = when {
-            tabs.isEmpty() -> 0
-            currentIndex >= tabs.size -> tabs.lastIndex
-            else -> currentIndex
-        }
+    fun getCurrentTab(): BrowserTab? {
+        return if (tabs.isNotEmpty() && currentIndex in tabs.indices) tabs[currentIndex] else null
     }
+
+    fun getCurrentTabIndex(): Int = currentIndex
 
     fun switchToTab(index: Int) {
-        if (index >= 0 && index < tabs.size) {
-            currentIndex = index
-        }
+        if (index in tabs.indices) currentIndex = index
     }
 
-    fun getCurrentTab(): BrowserTab? {
-        return if (tabs.isEmpty()) null else tabs[currentIndex]
+    fun removeTab(index: Int) {
+        if (index in tabs.indices) {
+            tabs.removeAt(index)
+            currentIndex = when {
+                tabs.isEmpty() -> 0
+                currentIndex >= tabs.size -> tabs.lastIndex
+                else -> currentIndex
+            }
+        }
     }
 
     fun toggleIncognito() {
-        getCurrentTab()?.let { it.isIncognito = !it.isIncognito }
+        getCurrentTab()?.isIncognito = !(getCurrentTab()?.isIncognito ?: false)
     }
 
     fun toggleDesktopMode() {
-        getCurrentTab()?.let { it.isDesktop = !it.isDesktop }
+        getCurrentTab()?.isDesktop = !(getCurrentTab()?.isDesktop ?: false)
     }
-
-    fun hasMultipleTabs() = tabs.size > 1
 }

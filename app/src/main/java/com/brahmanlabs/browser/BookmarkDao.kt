@@ -23,6 +23,9 @@ interface BookmarkDao {
     @Query("DELETE FROM bookmarks WHERE url = :url")
     suspend fun deleteByUrl(url: String)
 
+    @Query("DELETE FROM bookmarks")
+    suspend fun deleteAll()
+
     @Query("SELECT * FROM bookmarks WHERE url LIKE :query OR title LIKE :query ORDER BY timestamp DESC")
     suspend fun search(query: String): List<BookmarkItem>
 }

@@ -5,10 +5,14 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.KeyEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
+import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -16,11 +20,15 @@ import android.webkit.WebViewClient
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -34,6 +42,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var addressBar: EditText
     private lateinit var webView: WebView
     private lateinit var progressBar: ProgressBar
+    private lateinit var addressBarRow: LinearLayout
+    private lateinit var navigationBar: LinearLayout
     private lateinit var btnBookmark: ImageButton
     private lateinit var btnIncognito: ImageButton
     private lateinit var btnDesktop: ImageButton
@@ -48,8 +58,13 @@ class MainActivity : AppCompatActivity() {
     private val tabManager = TabManager()
     private lateinit var browserAdapter: BrowserAdapter
     private lateinit var db: BrahmanDatabase
+    private lateinit var prefs: BrahmanPreferences
 
     private val NEW_TAB_URL = "file:///android_asset/newtab.html"
+
+    private var lastSavedHistoryUrl: String = ""
+    private val historyDebounceHandler = Handler(Looper.getMainLooper())
+    private var historyDebounceRunnable: Runnable? = null
 
     private val historyLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -69,20 +84,74 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val settingsLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            progressBar.visibility = View.GONE
+            swipeRefresh.isRefreshing = false
+            applySettings()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         db = BrahmanDatabase.getInstance(this)
+        prefs = BrahmanPreferences.getInstance(this)
 
         bindViews()
+        setupWindowInsets()
         setupWebView()
+        applySettings()
         setupRecyclerView()
         setupListeners()
 
-        val firstTab = BrowserTab(url = NEW_TAB_URL, webView = webView)
+        val urlToLoad = resolveIncomingIntent(intent) ?: NEW_TAB_URL
+        val firstTab = BrowserTab(url = urlToLoad, webView = webView)
         tabManager.addTab(firstTab)
-        loadUrl(NEW_TAB_URL)
+        loadUrl(urlToLoad)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        val url = resolveIncomingIntent(intent)
+        if (!url.isNullOrEmpty()) {
+            addNewTab()
+            loadUrl(url)
+        }
+    }
+
+    private fun setupWindowInsets() {
+        ViewCompat.setOnApplyWindowInsetsListener(navigationBar) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                bottomMargin = systemBars.bottom + 4
+            }
+            insets
+        }
+    }
+
+    private fun resolveIncomingIntent(intent: Intent?): String? {
+        if (intent == null) return null
+        return when (intent.action) {
+            Intent.ACTION_VIEW -> intent.dataString
+            Intent.ACTION_SEND -> {
+                if (intent.type == "text/plain") {
+                    val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return null
+                    resolveUrl(sharedText)
+                } else null
+            }
+            else -> null
+        }
+    }
+
+    private fun applySettings() {
+        webView.settings.apply {
+            javaScriptEnabled = prefs.javascriptEnabled
+            textZoom = prefs.textSize
+        }
     }
 
     private fun bindViews() {
@@ -91,6 +160,8 @@ class MainActivity : AppCompatActivity() {
         addressBar = findViewById(R.id.addressBar)
         webView = findViewById(R.id.webView)
         progressBar = findViewById(R.id.progressBar)
+        addressBarRow = findViewById(R.id.addressBarRow)
+        navigationBar = findViewById(R.id.navigationBar)
         btnBookmark = findViewById(R.id.btnBookmark)
         btnIncognito = findViewById(R.id.btnIncognito)
         btnDesktop = findViewById(R.id.btnDesktop)
@@ -105,7 +176,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupWebView() {
         webView.settings.apply {
-            javaScriptEnabled = true
+            javaScriptEnabled = prefs.javascriptEnabled
             domStorageEnabled = true
             useWideViewPort = true
             loadWithOverviewMode = true
@@ -113,7 +184,7 @@ class MainActivity : AppCompatActivity() {
             builtInZoomControls = true
             displayZoomControls = false
             allowFileAccess = true
-            textZoom = 100
+            textZoom = prefs.textSize
         }
 
         webView.addJavascriptInterface(object {
@@ -121,15 +192,18 @@ class MainActivity : AppCompatActivity() {
             fun loadUrl(url: String) {
                 runOnUiThread { this@MainActivity.loadUrl(url) }
             }
+
+            @android.webkit.JavascriptInterface
+            fun getSearchEngine(): String = prefs.searchEngine
         }, "BrahmanBridge")
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(
-                view: WebView,
-                request: WebResourceRequest
+                view: WebView, request: WebResourceRequest
             ): Boolean {
                 val url = request.url.toString()
                 if (url.startsWith("file://")) return false
+                if (url.startsWith("javascript:") || url.startsWith("data:")) return false
                 loadUrl(url)
                 return true
             }
@@ -145,12 +219,17 @@ class MainActivity : AppCompatActivity() {
                 val isNewTab = url.startsWith("file://")
                 val isHttps = url.startsWith("https://")
 
+                // Only address pill hides — buttons always stay
+                addressBarRow.visibility = if (isNewTab) View.GONE else View.VISIBLE
                 lockIcon.visibility = if (isHttps) View.VISIBLE else View.GONE
 
                 val title = if (isNewTab) "New Tab" else (view.title ?: "New Tab")
                 tabManager.getCurrentTab()?.title = title
                 tabManager.getCurrentTab()?.url = url
-                browserAdapter.notifyDataSetChanged()
+
+                if (isNewTab) tabManager.getCurrentTab()?.favicon = null
+
+                browserAdapter.notifyItemChanged(tabManager.getCurrentTabIndex())
                 updateNavButtons()
 
                 if (isNewTab) {
@@ -164,9 +243,19 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 if (!isNewTab && tabManager.getCurrentTab()?.isIncognito == false) {
-                    lifecycleScope.launch {
-                        db.historyDao().insert(HistoryItem(title = title, url = url))
+                    historyDebounceRunnable?.let { historyDebounceHandler.removeCallbacks(it) }
+                    historyDebounceRunnable = Runnable {
+                        val currentUrl = webView.url ?: url
+                        if (currentUrl != lastSavedHistoryUrl && currentUrl == url) {
+                            lastSavedHistoryUrl = currentUrl
+                            lifecycleScope.launch {
+                                db.historyDao().insert(
+                                    HistoryItem(title = view.title ?: "New Tab", url = currentUrl)
+                                )
+                            }
+                        }
                     }
+                    historyDebounceHandler.postDelayed(historyDebounceRunnable!!, 800)
                 }
             }
         }
@@ -179,7 +268,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun onReceivedIcon(view: WebView, icon: Bitmap) {
                 tabManager.getCurrentTab()?.favicon = icon
-                browserAdapter.notifyDataSetChanged()
+                browserAdapter.notifyItemChanged(tabManager.getCurrentTabIndex())
             }
         }
     }
@@ -199,16 +288,26 @@ class MainActivity : AppCompatActivity() {
             tabs = tabManager.tabs,
             onTabClick = { index ->
                 tabManager.switchToTab(index)
-                tabManager.getCurrentTab()?.url?.let { loadUrl(it) }
+                val url = tabManager.getCurrentTab()?.url ?: NEW_TAB_URL
+                val isNewTab = url.startsWith("file://")
+                addressBarRow.visibility = if (isNewTab) View.GONE else View.VISIBLE
+                if (isNewTab) {
+                    addressBar.setText("")
+                    addressBar.hint = "Search or type URL"
+                    lockIcon.visibility = View.GONE
+                    btnBookmark.setImageResource(R.drawable.ic_bookmark)
+                    btnBookmark.alpha = 0.4f
+                } else {
+                    addressBar.setText(extractDomain(url))
+                    updateBookmarkIcon(url)
+                }
+                loadUrl(url)
             },
             onTabClose = { index ->
                 tabManager.removeTab(index)
                 browserAdapter.notifyDataSetChanged()
-                if (tabManager.tabs.isEmpty()) {
-                    addNewTab()
-                } else {
-                    tabManager.getCurrentTab()?.url?.let { loadUrl(it) }
-                }
+                if (tabManager.tabs.isEmpty()) addNewTab()
+                else loadUrl(tabManager.getCurrentTab()?.url ?: NEW_TAB_URL)
             }
         )
         tabRecycler.layoutManager =
@@ -220,25 +319,19 @@ class MainActivity : AppCompatActivity() {
         addressBar.setOnFocusChangeListener { _, hasFocus ->
             val currentUrl = tabManager.getCurrentTab()?.url ?: ""
             if (hasFocus) {
-                val isNewTab = currentUrl.startsWith("file://")
-                if (!isNewTab) {
+                if (!currentUrl.startsWith("file://")) {
                     addressBar.setText(currentUrl)
                     addressBar.selectAll()
                 }
             } else {
-                val isNewTab = currentUrl.startsWith("file://")
-                if (isNewTab) {
-                    addressBar.setText("")
-                } else {
-                    addressBar.setText(extractDomain(currentUrl))
-                }
+                if (currentUrl.startsWith("file://")) addressBar.setText("")
+                else addressBar.setText(extractDomain(currentUrl))
             }
         }
 
         addressBar.setOnEditorActionListener { _, actionId, event ->
             if (actionId == EditorInfo.IME_ACTION_GO ||
-                event?.keyCode == KeyEvent.KEYCODE_ENTER
-            ) {
+                event?.keyCode == KeyEvent.KEYCODE_ENTER) {
                 val input = addressBar.text.toString().trim()
                 if (input.isNotEmpty()) loadUrl(resolveUrl(input))
                 hideKeyboard()
@@ -248,9 +341,7 @@ class MainActivity : AppCompatActivity() {
 
         btnBookmark.setOnClickListener {
             val currentUrl = tabManager.getCurrentTab()?.url ?: ""
-            val isNewTab = currentUrl.startsWith("file://")
-            if (isNewTab) return@setOnClickListener
-
+            if (currentUrl.startsWith("file://")) return@setOnClickListener
             lifecycleScope.launch {
                 val isBookmarked = db.bookmarkDao().isBookmarked(currentUrl)
                 if (isBookmarked) {
@@ -269,13 +360,17 @@ class MainActivity : AppCompatActivity() {
         btnBack.setOnClickListener { if (webView.canGoBack()) webView.goBack() }
         btnForward.setOnClickListener { if (webView.canGoForward()) webView.goForward() }
         btnRefresh.setOnClickListener { webView.reload() }
-        btnHome.setOnClickListener { loadUrl(NEW_TAB_URL) }
+        btnHome.setOnClickListener { loadUrl(prefs.homepage) }
         btnNewTab.setOnClickListener { addNewTab() }
 
         btnIncognito.setOnClickListener {
             tabManager.toggleIncognito()
-            btnIncognito.alpha =
-                if (tabManager.getCurrentTab()?.isIncognito == true) 1.0f else 0.5f
+            val isIncognito = tabManager.getCurrentTab()?.isIncognito == true
+            btnIncognito.alpha = if (isIncognito) 1.0f else 0.5f
+            CookieManager.getInstance().setAcceptCookie(!isIncognito)
+            Toast.makeText(this,
+                if (isIncognito) "Incognito ON" else "Incognito OFF",
+                Toast.LENGTH_SHORT).show()
         }
 
         btnDesktop.setOnClickListener {
@@ -298,19 +393,15 @@ class MainActivity : AppCompatActivity() {
             popup.menu.add(0, 6, 0, "Find in page")
             popup.setOnMenuItemClickListener { item ->
                 when (item.itemId) {
-                    1 -> {
-                        bookmarkLauncher.launch(Intent(this, BookmarkActivity::class.java))
-                        true
-                    }
-                    2 -> {
-                        historyLauncher.launch(Intent(this, HistoryActivity::class.java))
-                        true
-                    }
+                    1 -> { bookmarkLauncher.launch(Intent(this, BookmarkActivity::class.java)); true }
+                    2 -> { historyLauncher.launch(Intent(this, HistoryActivity::class.java)); true }
                     3 -> { true }
-                    4 -> { true }
+                    4 -> { settingsLauncher.launch(Intent(this, SettingsActivity::class.java)); true }
                     5 -> {
                         val currentUrl = webView.url ?: ""
-                        if (currentUrl.isNotEmpty() && !currentUrl.startsWith("file://")) {
+                        if (currentUrl.isEmpty() || currentUrl.startsWith("file://")) {
+                            Toast.makeText(this, "Nothing to share", Toast.LENGTH_SHORT).show()
+                        } else {
                             val share = Intent(Intent.ACTION_SEND)
                             share.type = "text/plain"
                             share.putExtra(Intent.EXTRA_TEXT, currentUrl)
@@ -335,6 +426,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun addNewTab() {
+        webView.settings.userAgentString = ""
+        btnDesktop.alpha = 0.5f
         val newTab = BrowserTab(url = NEW_TAB_URL)
         tabManager.addTab(newTab)
         browserAdapter.notifyDataSetChanged()
@@ -344,23 +437,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun extractDomain(url: String): String {
         return try {
-            val host = Uri.parse(url).host ?: url
-            host.removePrefix("www.")
-        } catch (e: Exception) {
-            url
-        }
+            Uri.parse(url).host?.removePrefix("www.") ?: url
+        } catch (e: Exception) { url }
     }
 
     private fun resolveUrl(input: String): String = when {
         input.startsWith("http://") || input.startsWith("https://") -> input
         input.contains(".") && !input.contains(" ") -> "https://$input"
-        else -> "https://www.google.com/search?q=${input.replace(" ", "+")}"
+        else -> prefs.getSearchUrl(input)
     }
 
     private fun loadUrl(url: String) {
         tabManager.getCurrentTab()?.url = url
         webView.loadUrl(url)
         val isNewTab = url.startsWith("file://")
+        addressBarRow.visibility = if (isNewTab) View.GONE else View.VISIBLE
         if (isNewTab) {
             addressBar.setText("")
             addressBar.hint = "Search or type URL"
@@ -389,5 +480,10 @@ class MainActivity : AppCompatActivity() {
             return true
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onDestroy() {
+        historyDebounceRunnable?.let { historyDebounceHandler.removeCallbacks(it) }
+        super.onDestroy()
     }
 }
