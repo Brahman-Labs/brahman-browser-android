@@ -1,10 +1,12 @@
 package com.brahmanlabs.browser
 
 import android.app.Activity
+import android.app.DownloadManager
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.view.KeyEvent
@@ -13,6 +15,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.CookieManager
+import android.webkit.URLUtil
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -61,7 +64,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var prefs: BrahmanPreferences
 
     private val NEW_TAB_URL = "file:///android_asset/newtab.html"
-
     private var lastSavedHistoryUrl: String = ""
     private val historyDebounceHandler = Handler(Looper.getMainLooper())
     private var historyDebounceRunnable: Runnable? = null
@@ -93,6 +95,10 @@ class MainActivity : AppCompatActivity() {
             applySettings()
         }
     }
+
+    private val downloadLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -192,7 +198,6 @@ class MainActivity : AppCompatActivity() {
             fun loadUrl(url: String) {
                 runOnUiThread { this@MainActivity.loadUrl(url) }
             }
-
             @android.webkit.JavascriptInterface
             fun getSearchEngine(): String = prefs.searchEngine
         }, "BrahmanBridge")
@@ -218,20 +223,14 @@ class MainActivity : AppCompatActivity() {
                 swipeRefresh.isRefreshing = false
                 val isNewTab = url.startsWith("file://")
                 val isHttps = url.startsWith("https://")
-
-                // Only address pill hides — buttons always stay
                 addressBarRow.visibility = if (isNewTab) View.GONE else View.VISIBLE
                 lockIcon.visibility = if (isHttps) View.VISIBLE else View.GONE
-
                 val title = if (isNewTab) "New Tab" else (view.title ?: "New Tab")
                 tabManager.getCurrentTab()?.title = title
                 tabManager.getCurrentTab()?.url = url
-
                 if (isNewTab) tabManager.getCurrentTab()?.favicon = null
-
                 browserAdapter.notifyItemChanged(tabManager.getCurrentTabIndex())
                 updateNavButtons()
-
                 if (isNewTab) {
                     addressBar.setText("")
                     addressBar.hint = "Search or type URL"
@@ -241,7 +240,6 @@ class MainActivity : AppCompatActivity() {
                     addressBar.setText(extractDomain(url))
                     updateBookmarkIcon(url)
                 }
-
                 if (!isNewTab && tabManager.getCurrentTab()?.isIncognito == false) {
                     historyDebounceRunnable?.let { historyDebounceHandler.removeCallbacks(it) }
                     historyDebounceRunnable = Runnable {
@@ -265,11 +263,31 @@ class MainActivity : AppCompatActivity() {
                 progressBar.progress = newProgress
                 progressBar.visibility = if (newProgress < 100) View.VISIBLE else View.GONE
             }
-
             override fun onReceivedIcon(view: WebView, icon: Bitmap) {
                 tabManager.getCurrentTab()?.favicon = icon
                 browserAdapter.notifyItemChanged(tabManager.getCurrentTabIndex())
             }
+        }
+
+        webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, _ ->
+            val fileName = URLUtil.guessFileName(url, contentDisposition, mimetype)
+            val request = DownloadManager.Request(Uri.parse(url))
+            request.setMimeType(mimetype)
+            request.addRequestHeader("User-Agent", userAgent)
+            request.setDescription("Downloading file...")
+            request.setTitle(fileName)
+            request.setNotificationVisibility(
+                DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+            )
+            request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+            val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+            dm.enqueue(request)
+            lifecycleScope.launch {
+                db.downloadDao().insert(
+                    DownloadItem(fileName = fileName, url = url, mimeType = mimetype)
+                )
+            }
+            Toast.makeText(this, "Downloading: $fileName", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -395,7 +413,7 @@ class MainActivity : AppCompatActivity() {
                 when (item.itemId) {
                     1 -> { bookmarkLauncher.launch(Intent(this, BookmarkActivity::class.java)); true }
                     2 -> { historyLauncher.launch(Intent(this, HistoryActivity::class.java)); true }
-                    3 -> { true }
+                    3 -> { downloadLauncher.launch(Intent(this, DownloadActivity::class.java)); true }
                     4 -> { settingsLauncher.launch(Intent(this, SettingsActivity::class.java)); true }
                     5 -> {
                         val currentUrl = webView.url ?: ""
@@ -409,7 +427,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         true
                     }
-                    6 -> { true }
+                    6 -> { true } // Find in page — Phase 9
                     else -> false
                 }
             }
