@@ -9,6 +9,8 @@ import android.os.Bundle
 import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
@@ -25,6 +27,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -57,6 +60,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnHome: ImageButton
     private lateinit var btnNewTab: ImageButton
     private lateinit var tabRecycler: RecyclerView
+
+    // Find in page
+    private lateinit var findInPageBar: LinearLayout
+    private lateinit var findInput: EditText
+    private lateinit var findMatchCount: TextView
+    private lateinit var btnFindPrev: ImageButton
+    private lateinit var btnFindNext: ImageButton
+    private lateinit var btnFindClose: ImageButton
 
     private val tabManager = TabManager()
     private lateinit var browserAdapter: BrowserAdapter
@@ -178,6 +189,12 @@ class MainActivity : AppCompatActivity() {
         btnHome = findViewById(R.id.btnHome)
         btnNewTab = findViewById(R.id.btnNewTab)
         tabRecycler = findViewById(R.id.tabRecycler)
+        findInPageBar = findViewById(R.id.findInPageBar)
+        findInput = findViewById(R.id.findInput)
+        findMatchCount = findViewById(R.id.findMatchCount)
+        btnFindPrev = findViewById(R.id.btnFindPrev)
+        btnFindNext = findViewById(R.id.btnFindNext)
+        btnFindClose = findViewById(R.id.btnFindClose)
     }
 
     private fun setupWebView() {
@@ -217,6 +234,7 @@ class MainActivity : AppCompatActivity() {
                 val isNewTab = url.startsWith("file://")
                 view.settings.setSupportZoom(!isNewTab)
                 view.settings.builtInZoomControls = !isNewTab
+                closeFindInPage()
             }
 
             override fun onPageFinished(view: WebView, url: String) {
@@ -269,6 +287,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        webView.setFindListener { activeMatchOrdinal, numberOfMatches, _ ->
+            findMatchCount.text = if (numberOfMatches == 0) "No matches"
+            else "${activeMatchOrdinal + 1} / $numberOfMatches"
+        }
+
         webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, _ ->
             val fileName = URLUtil.guessFileName(url, contentDisposition, mimetype)
             val request = DownloadManager.Request(Uri.parse(url))
@@ -289,6 +312,23 @@ class MainActivity : AppCompatActivity() {
             }
             Toast.makeText(this, "Downloading: $fileName", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun openFindInPage() {
+        findInPageBar.visibility = View.VISIBLE
+        findInput.requestFocus()
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.showSoftInput(findInput, InputMethodManager.SHOW_IMPLICIT)
+        findInput.text.clear()
+        findMatchCount.text = ""
+    }
+
+    private fun closeFindInPage() {
+        findInPageBar.visibility = View.GONE
+        webView.clearMatches()
+        findInput.text.clear()
+        findMatchCount.text = ""
+        hideKeyboard()
     }
 
     private fun updateBookmarkIcon(url: String) {
@@ -401,6 +441,32 @@ class MainActivity : AppCompatActivity() {
             webView.reload()
         }
 
+        // Find in page listeners
+        findInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val query = s.toString().trim()
+                if (query.isNotEmpty()) {
+                    webView.findAllAsync(query)
+                } else {
+                    webView.clearMatches()
+                    findMatchCount.text = ""
+                }
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+
+        findInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                webView.findNext(true)
+                true
+            } else false
+        }
+
+        btnFindPrev.setOnClickListener { webView.findNext(false) }
+        btnFindNext.setOnClickListener { webView.findNext(true) }
+        btnFindClose.setOnClickListener { closeFindInPage() }
+
         btnMore.setOnClickListener { view ->
             val popup = PopupMenu(this, view)
             popup.menu.add(0, 1, 0, "Bookmarks")
@@ -427,7 +493,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         true
                     }
-                    6 -> { true } // Find in page — Phase 9
+                    6 -> { openFindInPage(); true }
                     else -> false
                 }
             }
@@ -493,9 +559,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_BACK && webView.canGoBack()) {
-            webView.goBack()
-            return true
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (findInPageBar.visibility == View.VISIBLE) {
+                closeFindInPage()
+                return true
+            }
+            if (webView.canGoBack()) {
+                webView.goBack()
+                return true
+            }
         }
         return super.onKeyDown(keyCode, event)
     }
