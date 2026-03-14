@@ -43,6 +43,31 @@
                     android:padding="8dp" android:alpha="0.5"
                     android:contentDescription="Desktop Mode"/>
 
+                <FrameLayout
+                    android:layout_width="36dp"
+                    android:layout_height="36dp">
+
+                    <ImageButton android:id="@+id/btnShield"
+                        android:layout_width="36dp" android:layout_height="36dp"
+                        android:background="@drawable/bg_nav_button"
+                        android:src="@drawable/ic_brahman_shield"
+                        android:padding="7dp"
+                        android:contentDescription="Brahman Shields"/>
+
+                    <TextView android:id="@+id/shieldBadge"
+                        android:layout_width="14dp"
+                        android:layout_height="14dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="1dp"
+                        android:layout_marginEnd="1dp"
+                        android:background="@drawable/bg_badge"
+                        android:textColor="#FFFFFF"
+                        android:textSize="7sp"
+                        android:gravity="center"
+                        android:visibility="gone"/>
+
+                </FrameLayout>
+
                 <ImageButton android:id="@+id/btnMore"
                     android:layout_width="36dp" android:layout_height="36dp"
                     android:background="@drawable/bg_nav_button"
@@ -124,7 +149,6 @@
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-    <!-- Find in Page Bar — hidden by default, sits above nav bar -->
     <LinearLayout android:id="@+id/findInPageBar"
         android:layout_width="match_parent" android:layout_height="48dp"
         android:layout_above="@id/navigationBar"
@@ -148,7 +172,7 @@
 
         <TextView android:id="@+id/findMatchCount"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:textColor="@color/textHint"
+            android:textColor="#8090E0EF"
             android:textSize="12sp"
             android:layout_marginStart="6dp"
             android:text=""/>

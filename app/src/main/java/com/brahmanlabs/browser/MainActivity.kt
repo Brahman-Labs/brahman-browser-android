@@ -20,6 +20,8 @@ import android.webkit.CookieManager
 import android.webkit.URLUtil
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.EditText
@@ -53,6 +55,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnBookmark: ImageButton
     private lateinit var btnIncognito: ImageButton
     private lateinit var btnDesktop: ImageButton
+    private lateinit var btnShield: ImageButton
+    private lateinit var shieldBadge: TextView
     private lateinit var btnMore: ImageButton
     private lateinit var btnBack: ImageButton
     private lateinit var btnForward: ImageButton
@@ -60,8 +64,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnHome: ImageButton
     private lateinit var btnNewTab: ImageButton
     private lateinit var tabRecycler: RecyclerView
-
-    // Find in page
     private lateinit var findInPageBar: LinearLayout
     private lateinit var findInput: EditText
     private lateinit var findMatchCount: TextView
@@ -73,11 +75,36 @@ class MainActivity : AppCompatActivity() {
     private lateinit var browserAdapter: BrowserAdapter
     private lateinit var db: BrahmanDatabase
     private lateinit var prefs: BrahmanPreferences
+    private lateinit var adBlocker: AdBlocker
 
     private val NEW_TAB_URL = "file:///android_asset/newtab.html"
-    private var lastSavedHistoryUrl: String = ""
+    private var lastSavedHistoryUrl = ""
     private val historyDebounceHandler = Handler(Looper.getMainLooper())
     private var historyDebounceRunnable: Runnable? = null
+
+    companion object {
+        private const val FP_JS = """
+(function(){
+  try{
+    var orig=HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext=function(t,a){
+      var ctx=orig.call(this,t,a);
+      if(ctx&&t==='2d'){
+        var oi=ctx.getImageData.bind(ctx);
+        ctx.getImageData=function(x,y,w,h){
+          var d=oi(x,y,w,h);
+          for(var i=0;i<d.data.length;i+=4){d.data[i]^=1;}
+          return d;
+        };
+      }
+      return ctx;
+    };
+    try{Object.defineProperty(navigator,'hardwareConcurrency',{get:function(){return 4;},configurable:true});}catch(e){}
+    try{Object.defineProperty(screen,'colorDepth',{get:function(){return 24;},configurable:true});}catch(e){}
+  }catch(e){}
+})();
+"""
+    }
 
     private val historyLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -117,6 +144,7 @@ class MainActivity : AppCompatActivity() {
 
         db = BrahmanDatabase.getInstance(this)
         prefs = BrahmanPreferences.getInstance(this)
+        adBlocker = AdBlocker.getInstance(this)
 
         bindViews()
         setupWindowInsets()
@@ -134,18 +162,30 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         val url = resolveIncomingIntent(intent)
-        if (!url.isNullOrEmpty()) {
-            addNewTab()
-            loadUrl(url)
+        if (!url.isNullOrEmpty()) { addNewTab(); loadUrl(url) }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        handleForgetOnClose()
+    }
+
+    private fun handleForgetOnClose() {
+        if (adBlocker.hasAnyForgetOnClose()) {
+            tabManager.tabs.forEach { tab ->
+                if (adBlocker.isForgetOnClose(tab.url)) {
+                    CookieManager.getInstance().removeAllCookies(null)
+                    CookieManager.getInstance().flush()
+                    WebStorage.getInstance().deleteAllData()
+                }
+            }
         }
     }
 
     private fun setupWindowInsets() {
         ViewCompat.setOnApplyWindowInsetsListener(navigationBar) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                bottomMargin = systemBars.bottom + 4
-            }
+            view.updateLayoutParams<ViewGroup.MarginLayoutParams> { bottomMargin = systemBars.bottom + 4 }
             insets
         }
     }
@@ -154,12 +194,8 @@ class MainActivity : AppCompatActivity() {
         if (intent == null) return null
         return when (intent.action) {
             Intent.ACTION_VIEW -> intent.dataString
-            Intent.ACTION_SEND -> {
-                if (intent.type == "text/plain") {
-                    val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return null
-                    resolveUrl(sharedText)
-                } else null
-            }
+            Intent.ACTION_SEND -> if (intent.type == "text/plain")
+                intent.getStringExtra(Intent.EXTRA_TEXT)?.let { resolveUrl(it) } else null
             else -> null
         }
     }
@@ -169,6 +205,16 @@ class MainActivity : AppCompatActivity() {
             javaScriptEnabled = prefs.javascriptEnabled
             textZoom = prefs.textSize
         }
+    }
+
+    private fun applyShieldSettings(url: String) {
+        if (url.startsWith("file://")) return
+        val scriptsBlocked = adBlocker.isScriptsBlocked(url)
+        webView.settings.javaScriptEnabled =
+            if (scriptsBlocked) false else prefs.javascriptEnabled
+        val cookiesBlocked = adBlocker.isCookiesBlocked(url)
+        CookieManager.getInstance().setAcceptCookie(!cookiesBlocked)
+        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, !cookiesBlocked)
     }
 
     private fun bindViews() {
@@ -182,6 +228,8 @@ class MainActivity : AppCompatActivity() {
         btnBookmark = findViewById(R.id.btnBookmark)
         btnIncognito = findViewById(R.id.btnIncognito)
         btnDesktop = findViewById(R.id.btnDesktop)
+        btnShield = findViewById(R.id.btnShield)
+        shieldBadge = findViewById(R.id.shieldBadge)
         btnMore = findViewById(R.id.btnMore)
         btnBack = findViewById(R.id.btnBack)
         btnForward = findViewById(R.id.btnForward)
@@ -212,25 +260,49 @@ class MainActivity : AppCompatActivity() {
 
         webView.addJavascriptInterface(object {
             @android.webkit.JavascriptInterface
-            fun loadUrl(url: String) {
-                runOnUiThread { this@MainActivity.loadUrl(url) }
-            }
+            fun loadUrl(url: String) { runOnUiThread { this@MainActivity.loadUrl(url) } }
             @android.webkit.JavascriptInterface
             fun getSearchEngine(): String = prefs.searchEngine
         }, "BrahmanBridge")
 
         webView.webViewClient = object : WebViewClient() {
+
+            override fun shouldInterceptRequest(
+                view: WebView, request: WebResourceRequest
+            ): WebResourceResponse? {
+                val pageUrl = tabManager.getCurrentTab()?.url ?: ""
+                val reqUrl = request.url.toString()
+                if (adBlocker.isShieldsEnabled(pageUrl) && adBlocker.shouldBlock(reqUrl)) {
+                    adBlocker.incrementBlockedCount()
+                    runOnUiThread { updateShieldBadge() }
+                    return WebResourceResponse("text/plain", "utf-8", null)
+                }
+                return null
+            }
+
             override fun shouldOverrideUrlLoading(
                 view: WebView, request: WebResourceRequest
             ): Boolean {
                 val url = request.url.toString()
                 if (url.startsWith("file://")) return false
                 if (url.startsWith("javascript:") || url.startsWith("data:")) return false
+                // HTTPS Upgrade
+                if (url.startsWith("http://")) {
+                    val pageUrl = tabManager.getCurrentTab()?.url ?: ""
+                    if (adBlocker.isShieldsEnabled(pageUrl) && adBlocker.isHttpsUpgradeEnabled(pageUrl)) {
+                        val httpsUrl = url.replaceFirst("http://", "https://")
+                        loadUrl(httpsUrl)
+                        return true
+                    }
+                }
                 loadUrl(url)
                 return true
             }
 
             override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
+                adBlocker.resetBlockedCount()
+                runOnUiThread { updateShieldBadge() }
+                applyShieldSettings(url)
                 val isNewTab = url.startsWith("file://")
                 view.settings.setSupportZoom(!isNewTab)
                 view.settings.builtInZoomControls = !isNewTab
@@ -249,6 +321,7 @@ class MainActivity : AppCompatActivity() {
                 if (isNewTab) tabManager.getCurrentTab()?.favicon = null
                 browserAdapter.notifyItemChanged(tabManager.getCurrentTabIndex())
                 updateNavButtons()
+                updateShieldIcon(url)
                 if (isNewTab) {
                     addressBar.setText("")
                     addressBar.hint = "Search or type URL"
@@ -257,6 +330,10 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     addressBar.setText(extractDomain(url))
                     updateBookmarkIcon(url)
+                    // Fingerprinting protection injection
+                    if (adBlocker.isShieldsEnabled(url) && adBlocker.isFingerprintingBlocked(url)) {
+                        view.evaluateJavascript(FP_JS, null)
+                    }
                 }
                 if (!isNewTab && tabManager.getCurrentTab()?.isIncognito == false) {
                     historyDebounceRunnable?.let { historyDebounceHandler.removeCallbacks(it) }
@@ -299,19 +376,30 @@ class MainActivity : AppCompatActivity() {
             request.addRequestHeader("User-Agent", userAgent)
             request.setDescription("Downloading file...")
             request.setTitle(fileName)
-            request.setNotificationVisibility(
-                DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
-            )
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
             val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
             dm.enqueue(request)
             lifecycleScope.launch {
-                db.downloadDao().insert(
-                    DownloadItem(fileName = fileName, url = url, mimeType = mimetype)
-                )
+                db.downloadDao().insert(DownloadItem(fileName = fileName, url = url, mimeType = mimetype))
             }
             Toast.makeText(this, "Downloading: $fileName", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun updateShieldBadge() {
+        val count = adBlocker.getBlockedCount()
+        if (count > 0) {
+            shieldBadge.visibility = View.VISIBLE
+            shieldBadge.text = if (count > 99) "99" else count.toString()
+        } else {
+            shieldBadge.visibility = View.GONE
+        }
+    }
+
+    private fun updateShieldIcon(url: String) {
+        val enabled = adBlocker.isShieldsEnabled(url)
+        btnShield.alpha = if (enabled) 1.0f else 0.4f
     }
 
     private fun openFindInPage() {
@@ -350,26 +438,30 @@ class MainActivity : AppCompatActivity() {
                 val isNewTab = url.startsWith("file://")
                 addressBarRow.visibility = if (isNewTab) View.GONE else View.VISIBLE
                 if (isNewTab) {
-                    addressBar.setText("")
-                    addressBar.hint = "Search or type URL"
+                    addressBar.setText(""); addressBar.hint = "Search or type URL"
                     lockIcon.visibility = View.GONE
-                    btnBookmark.setImageResource(R.drawable.ic_bookmark)
-                    btnBookmark.alpha = 0.4f
+                    btnBookmark.setImageResource(R.drawable.ic_bookmark); btnBookmark.alpha = 0.4f
                 } else {
                     addressBar.setText(extractDomain(url))
                     updateBookmarkIcon(url)
                 }
+                updateShieldIcon(url)
                 loadUrl(url)
             },
             onTabClose = { index ->
+                // handle forget on close for this tab
+                val tab = tabManager.tabs.getOrNull(index)
+                if (tab != null && adBlocker.isForgetOnClose(tab.url)) {
+                    CookieManager.getInstance().removeAllCookies(null)
+                    CookieManager.getInstance().flush()
+                }
                 tabManager.removeTab(index)
                 browserAdapter.notifyDataSetChanged()
                 if (tabManager.tabs.isEmpty()) addNewTab()
                 else loadUrl(tabManager.getCurrentTab()?.url ?: NEW_TAB_URL)
             }
         )
-        tabRecycler.layoutManager =
-            LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        tabRecycler.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
         tabRecycler.adapter = browserAdapter
     }
 
@@ -378,8 +470,7 @@ class MainActivity : AppCompatActivity() {
             val currentUrl = tabManager.getCurrentTab()?.url ?: ""
             if (hasFocus) {
                 if (!currentUrl.startsWith("file://")) {
-                    addressBar.setText(currentUrl)
-                    addressBar.selectAll()
+                    addressBar.setText(currentUrl); addressBar.selectAll()
                 }
             } else {
                 if (currentUrl.startsWith("file://")) addressBar.setText("")
@@ -388,12 +479,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         addressBar.setOnEditorActionListener { _, actionId, event ->
-            if (actionId == EditorInfo.IME_ACTION_GO ||
-                event?.keyCode == KeyEvent.KEYCODE_ENTER) {
+            if (actionId == EditorInfo.IME_ACTION_GO || event?.keyCode == KeyEvent.KEYCODE_ENTER) {
                 val input = addressBar.text.toString().trim()
                 if (input.isNotEmpty()) loadUrl(resolveUrl(input))
-                hideKeyboard()
-                true
+                hideKeyboard(); true
             } else false
         }
 
@@ -415,6 +504,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        btnShield.setOnClickListener {
+            val currentUrl = tabManager.getCurrentTab()?.url ?: ""
+            if (currentUrl.startsWith("file://")) {
+                Toast.makeText(this, "Shields protect web pages", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            ShieldsPanel(this, currentUrl, adBlocker) {
+                updateShieldIcon(currentUrl)
+                webView.reload()
+            }.show()
+        }
+
         btnBack.setOnClickListener { if (webView.canGoBack()) webView.goBack() }
         btnForward.setOnClickListener { if (webView.canGoForward()) webView.goForward() }
         btnRefresh.setOnClickListener { webView.reload() }
@@ -426,9 +527,7 @@ class MainActivity : AppCompatActivity() {
             val isIncognito = tabManager.getCurrentTab()?.isIncognito == true
             btnIncognito.alpha = if (isIncognito) 1.0f else 0.5f
             CookieManager.getInstance().setAcceptCookie(!isIncognito)
-            Toast.makeText(this,
-                if (isIncognito) "Incognito ON" else "Incognito OFF",
-                Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, if (isIncognito) "Incognito ON" else "Incognito OFF", Toast.LENGTH_SHORT).show()
         }
 
         btnDesktop.setOnClickListener {
@@ -441,28 +540,19 @@ class MainActivity : AppCompatActivity() {
             webView.reload()
         }
 
-        // Find in page listeners
         findInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val query = s.toString().trim()
-                if (query.isNotEmpty()) {
-                    webView.findAllAsync(query)
-                } else {
-                    webView.clearMatches()
-                    findMatchCount.text = ""
-                }
+                val q = s.toString().trim()
+                if (q.isNotEmpty()) webView.findAllAsync(q)
+                else { webView.clearMatches(); findMatchCount.text = "" }
             }
             override fun afterTextChanged(s: Editable?) {}
         })
 
         findInput.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
-                webView.findNext(true)
-                true
-            } else false
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) { webView.findNext(true); true } else false
         }
-
         btnFindPrev.setOnClickListener { webView.findNext(false) }
         btnFindNext.setOnClickListener { webView.findNext(true) }
         btnFindClose.setOnClickListener { closeFindInPage() }
@@ -486,9 +576,10 @@ class MainActivity : AppCompatActivity() {
                         if (currentUrl.isEmpty() || currentUrl.startsWith("file://")) {
                             Toast.makeText(this, "Nothing to share", Toast.LENGTH_SHORT).show()
                         } else {
-                            val share = Intent(Intent.ACTION_SEND)
-                            share.type = "text/plain"
-                            share.putExtra(Intent.EXTRA_TEXT, currentUrl)
+                            val share = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_TEXT, currentUrl)
+                            }
                             startActivity(Intent.createChooser(share, "Share URL"))
                         }
                         true
@@ -502,9 +593,7 @@ class MainActivity : AppCompatActivity() {
 
         swipeRefresh.setOnRefreshListener { webView.reload() }
         swipeRefresh.setColorSchemeColors(
-            getColor(R.color.waterCyan),
-            getColor(R.color.waterCyanLight),
-            getColor(R.color.waterFoam)
+            getColor(R.color.waterCyan), getColor(R.color.waterCyanLight), getColor(R.color.waterFoam)
         )
         swipeRefresh.setProgressBackgroundColorSchemeColor(getColor(R.color.waterMid))
     }
@@ -519,11 +608,9 @@ class MainActivity : AppCompatActivity() {
         tabRecycler.scrollToPosition(tabManager.tabs.lastIndex)
     }
 
-    private fun extractDomain(url: String): String {
-        return try {
-            Uri.parse(url).host?.removePrefix("www.") ?: url
-        } catch (e: Exception) { url }
-    }
+    private fun extractDomain(url: String): String = try {
+        Uri.parse(url).host?.removePrefix("www.") ?: url
+    } catch (e: Exception) { url }
 
     private fun resolveUrl(input: String): String = when {
         input.startsWith("http://") || input.startsWith("https://") -> input
@@ -537,14 +624,10 @@ class MainActivity : AppCompatActivity() {
         val isNewTab = url.startsWith("file://")
         addressBarRow.visibility = if (isNewTab) View.GONE else View.VISIBLE
         if (isNewTab) {
-            addressBar.setText("")
-            addressBar.hint = "Search or type URL"
+            addressBar.setText(""); addressBar.hint = "Search or type URL"
             lockIcon.visibility = View.GONE
-            btnBookmark.setImageResource(R.drawable.ic_bookmark)
-            btnBookmark.alpha = 0.4f
-        } else {
-            addressBar.setText(extractDomain(url))
-        }
+            btnBookmark.setImageResource(R.drawable.ic_bookmark); btnBookmark.alpha = 0.4f
+        } else { addressBar.setText(extractDomain(url)) }
     }
 
     private fun updateNavButtons() {
@@ -560,14 +643,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-            if (findInPageBar.visibility == View.VISIBLE) {
-                closeFindInPage()
-                return true
-            }
-            if (webView.canGoBack()) {
-                webView.goBack()
-                return true
-            }
+            if (findInPageBar.visibility == View.VISIBLE) { closeFindInPage(); return true }
+            if (webView.canGoBack()) { webView.goBack(); return true }
         }
         return super.onKeyDown(keyCode, event)
     }

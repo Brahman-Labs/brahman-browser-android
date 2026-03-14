@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- Shield outer glow -->
+    <path
+        android:fillColor="#40FF8C00"
+        android:pathData="M24,3L7,10.5V22C7,31.9 14.6,41.1 24,44C33.4,41.1 41,31.9 41,22V10.5L24,3Z"/>
+
+    <!-- Shield dark body -->
+    <path
+        android:fillColor="#1A0800"
+        android:pathData="M24,5L9,12V22C9,30.8 15.8,39.4 24,42C32.2,39.4 39,30.8 39,22V12L24,5Z"/>
+
+    <!-- Shield border -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#80FFB347"
+        android:strokeWidth="1.2"
+        android:pathData="M24,6L10,12.5V22C10,30.2 16.2,38.2 24,40.8C31.8,38.2 38,30.2 38,22V12.5L24,6Z"/>
+
+    <!-- Top highlight -->
+    <path
+        android:fillColor="#50FFCC44"
+        android:pathData="M24,5L9,12L9,14L24,7L39,14L39,12L24,5Z"/>
+
+    <!-- B letter - full path -->
+    <!-- Left vertical bar -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M17,15L20.5,15L20.5,33L17,33Z"/>
+
+    <!-- Top horizontal bar -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M17,15L25,15L25,18L17,18Z"/>
+
+    <!-- Middle horizontal bar -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M17,22L24.5,22L24.5,25L17,25Z"/>
+
+    <!-- Bottom horizontal bar -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M17,30L25.5,30L25.5,33L17,33Z"/>
+
+    <!-- Top right bump of B -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M24,15 Q31,15 31,19.5 Q31,23 24.5,23.5 L24.5,25 Q33,24 33,19.5 Q33,13.5 24,13.5 Z"/>
+
+    <!-- Bottom right bump of B -->
+    <path
+        android:fillColor="#FFB300"
+        android:pathData="M24,22 Q34,22 34,27.5 Q34,33.5 24.5,33.5 L24.5,30 Q30.5,30 30.5,27.5 Q30.5,25 24,25 Z"/>
+
+</vector>
