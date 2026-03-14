@@ -18,7 +18,6 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var prefs: BrahmanPreferences
     private lateinit var db: BrahmanDatabase
-
     private lateinit var btnBack: ImageButton
     private lateinit var tvSearchEngine: android.widget.TextView
     private lateinit var rowSearchEngine: LinearLayout
@@ -27,6 +26,9 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var btnTextMedium: Button
     private lateinit var btnTextLarge: Button
     private lateinit var switchJavascript: SwitchCompat
+    private lateinit var switchNightMode: SwitchCompat
+    private lateinit var switchBlockNotifications: SwitchCompat
+    private lateinit var switchBlockAutoplay: SwitchCompat
     private lateinit var rowClearHistory: LinearLayout
     private lateinit var rowClearCache: LinearLayout
     private lateinit var rowClearBookmarks: LinearLayout
@@ -34,10 +36,8 @@ class SettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
-
         prefs = BrahmanPreferences.getInstance(this)
         db = BrahmanDatabase.getInstance(this)
-
         bindViews()
         loadCurrentSettings()
         setupListeners()
@@ -52,6 +52,9 @@ class SettingsActivity : AppCompatActivity() {
         btnTextMedium = findViewById(R.id.btnTextMedium)
         btnTextLarge = findViewById(R.id.btnTextLarge)
         switchJavascript = findViewById(R.id.switchJavascript)
+        switchNightMode = findViewById(R.id.switchNightMode)
+        switchBlockNotifications = findViewById(R.id.switchBlockNotifications)
+        switchBlockAutoplay = findViewById(R.id.switchBlockAutoplay)
         rowClearHistory = findViewById(R.id.rowClearHistory)
         rowClearCache = findViewById(R.id.rowClearCache)
         rowClearBookmarks = findViewById(R.id.rowClearBookmarks)
@@ -63,7 +66,6 @@ class SettingsActivity : AppCompatActivity() {
             BrahmanPreferences.ENGINE_DDG -> "DuckDuckGo"
             else -> "Google"
         }
-
         val homepage = prefs.homepage
         if (homepage == "file:///android_asset/newtab.html") {
             etHomepage.setText("")
@@ -71,17 +73,15 @@ class SettingsActivity : AppCompatActivity() {
         } else {
             etHomepage.setText(homepage)
         }
-
         updateTextSizeButtons(prefs.textSize)
         switchJavascript.isChecked = prefs.javascriptEnabled
+        switchNightMode.isChecked = prefs.nightModeEnabled
+        switchBlockNotifications.isChecked = prefs.blockNotifications
+        switchBlockAutoplay.isChecked = prefs.blockAutoplay
     }
 
     private fun setupListeners() {
-        btnBack.setOnClickListener {
-            saveHomepage()
-            setResult(RESULT_OK)
-            finish()
-        }
+        btnBack.setOnClickListener { saveHomepage(); setResult(RESULT_OK); finish() }
 
         rowSearchEngine.setOnClickListener {
             val engines = arrayOf("Google", "Bing", "DuckDuckGo")
@@ -101,15 +101,11 @@ class SettingsActivity : AppCompatActivity() {
                     tvSearchEngine.text = engines[which]
                     dialog.dismiss()
                     Toast.makeText(this, "Search engine updated", Toast.LENGTH_SHORT).show()
-                }
-                .show()
+                }.show()
         }
 
         etHomepage.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_DONE) {
-                saveHomepage()
-                true
-            } else false
+            if (actionId == EditorInfo.IME_ACTION_DONE) { saveHomepage(); true } else false
         }
 
         btnTextSmall.setOnClickListener {
@@ -130,69 +126,76 @@ class SettingsActivity : AppCompatActivity() {
 
         switchJavascript.setOnCheckedChangeListener { _, isChecked ->
             prefs.javascriptEnabled = isChecked
-            Toast.makeText(
-                this,
+            Toast.makeText(this,
                 if (isChecked) "JavaScript enabled" else "JavaScript disabled",
-                Toast.LENGTH_SHORT
-            ).show()
+                Toast.LENGTH_SHORT).show()
+        }
+
+        switchNightMode.setOnCheckedChangeListener { _, isChecked ->
+            prefs.nightModeEnabled = isChecked
+            Toast.makeText(this,
+                if (isChecked) "Night Mode ON — reload pages to apply"
+                else "Night Mode OFF — reload pages to apply",
+                Toast.LENGTH_SHORT).show()
+        }
+
+        switchBlockNotifications.setOnCheckedChangeListener { _, isChecked ->
+            prefs.blockNotifications = isChecked
+            Toast.makeText(this,
+                if (isChecked) "Notification popups blocked" else "Notification popups allowed",
+                Toast.LENGTH_SHORT).show()
+        }
+
+        switchBlockAutoplay.setOnCheckedChangeListener { _, isChecked ->
+            prefs.blockAutoplay = isChecked
+            Toast.makeText(this,
+                if (isChecked) "Autoplay blocked" else "Autoplay allowed",
+                Toast.LENGTH_SHORT).show()
         }
 
         rowClearHistory.setOnClickListener {
-            AlertDialog.Builder(this)
-                .setTitle("Clear History")
+            AlertDialog.Builder(this).setTitle("Clear History")
                 .setMessage("Clear all browsing history?")
                 .setPositiveButton("Clear") { _, _ ->
                     lifecycleScope.launch {
                         db.historyDao().clearAll()
                         Toast.makeText(this@SettingsActivity, "History cleared", Toast.LENGTH_SHORT).show()
                     }
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
+                }.setNegativeButton("Cancel", null).show()
         }
 
         rowClearCache.setOnClickListener {
-            AlertDialog.Builder(this)
-                .setTitle("Clear Cache & Cookies")
+            AlertDialog.Builder(this).setTitle("Clear Cache & Cookies")
                 .setMessage("This will clear all cached data and cookies.")
                 .setPositiveButton("Clear") { _, _ ->
-                    // BUG 14 FIX: Also clear WebView disk cache
                     android.webkit.WebStorage.getInstance().deleteAllData()
                     android.webkit.CookieManager.getInstance().removeAllCookies(null)
                     android.webkit.CookieManager.getInstance().flush()
-                    // Clear WebView cache via application context
-                    val cacheDir = applicationContext.cacheDir
-                    cacheDir.deleteRecursively()
+                    applicationContext.cacheDir.deleteRecursively()
                     Toast.makeText(this, "Cache & cookies cleared", Toast.LENGTH_SHORT).show()
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
+                }.setNegativeButton("Cancel", null).show()
         }
 
         rowClearBookmarks.setOnClickListener {
-            AlertDialog.Builder(this)
-                .setTitle("Clear Bookmarks")
+            AlertDialog.Builder(this).setTitle("Clear Bookmarks")
                 .setMessage("Delete all bookmarks?")
                 .setPositiveButton("Clear") { _, _ ->
                     lifecycleScope.launch {
                         db.bookmarkDao().deleteAll()
                         Toast.makeText(this@SettingsActivity, "Bookmarks cleared", Toast.LENGTH_SHORT).show()
                     }
-                }
-                .setNegativeButton("Cancel", null)
-                .show()
+                }.setNegativeButton("Cancel", null).show()
         }
     }
 
     private fun saveHomepage() {
         val input = etHomepage.text.toString().trim()
-        // BUG 13 FIX: Properly validate homepage URL
         prefs.homepage = when {
             input.isEmpty() -> "file:///android_asset/newtab.html"
             input.startsWith("http://") || input.startsWith("https://") -> input
             input.startsWith("file://") -> input
             input.contains(".") -> "https://$input"
-            else -> "file:///android_asset/newtab.html" // invalid input → fallback to new tab
+            else -> "file:///android_asset/newtab.html"
         }
         Toast.makeText(this, "Homepage saved", Toast.LENGTH_SHORT).show()
     }
@@ -205,13 +208,9 @@ class SettingsActivity : AppCompatActivity() {
         btnTextLarge.setTextColor(if (size == BrahmanPreferences.TEXT_LARGE) activeColor else inactiveColor)
     }
 
-    // BUG 4 FIX: Use onKeyDown instead of deprecated onBackPressed
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-            saveHomepage()
-            setResult(RESULT_OK)
-            finish()
-            return true
+            saveHomepage(); setResult(RESULT_OK); finish(); return true
         }
         return super.onKeyDown(keyCode, event)
     }

@@ -4,438 +4,511 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_water_gradient">
 
-    <!-- Top Bar -->
-    <LinearLayout
+    <RelativeLayout
         android:id="@+id/settingsTopBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="56dp"
         android:layout_alignParentTop="true"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="12dp"
-        android:background="@drawable/bg_top_bar">
+        android:background="@drawable/bg_top_bar"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp">
 
         <ImageButton
             android:id="@+id/btnSettingsBack"
             android:layout_width="40dp"
             android:layout_height="40dp"
+            android:layout_centerVertical="true"
+            android:layout_alignParentStart="true"
             android:background="@drawable/bg_nav_button"
             android:src="@drawable/ic_back"
             android:padding="10dp"
             android:contentDescription="Back"/>
 
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_centerInParent="true"
             android:text="Settings"
-            android:textColor="#FFFFFF"
-            android:textSize="20sp"
-            android:fontFamily="sans-serif-medium"
-            android:layout_marginStart="12dp"/>
+            android:textColor="@color/textPrimary"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
 
-    </LinearLayout>
+    </RelativeLayout>
 
-    <!-- Scrollable Settings Content -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@id/settingsTopBar"
-        android:clipToPadding="false"
-        android:paddingBottom="24dp">
+        android:fillViewport="true">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:padding="12dp">
 
-            <!-- SECTION: Browser -->
+            <!-- SEARCH ENGINE -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="BROWSER"
-                android:textColor="#8090E0EF"
+                android:text="SEARCH"
+                android:textColor="@color/waterCyan"
                 android:textSize="11sp"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="8dp"
-                android:layout_marginStart="4dp"/>
+                android:textStyle="bold"
+                android:paddingStart="4dp"
+                android:paddingBottom="4dp"
+                android:layout_marginTop="8dp"/>
 
-            <!-- Search Engine -->
             <LinearLayout
                 android:id="@+id/rowSearchEngine"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:background="@drawable/bg_address_bar"
-                android:padding="16dp"
-                android:layout_marginBottom="8dp">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_language"
-                    android:layout_marginEnd="16dp"/>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Search Engine"
-                        android:textColor="#FFFFFF"
-                        android:textSize="15sp"/>
-
-                    <TextView
-                        android:id="@+id/tvSearchEngine"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Google"
-                        android:textColor="#90E0EF"
-                        android:textSize="13sp"
-                        android:layout_marginTop="2dp"/>
-
-                </LinearLayout>
+                android:background="@drawable/bg_nav_button"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginBottom="2dp">
 
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@drawable/ic_forward"
-                    android:alpha="0.5"/>
+                    android:src="@drawable/ic_language"
+                    android:layout_marginEnd="12dp"/>
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Search Engine"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14sp"/>
+
+                <TextView
+                    android:id="@+id/tvSearchEngine"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/waterCyan"
+                    android:textSize="13sp"/>
 
             </LinearLayout>
 
             <!-- Homepage -->
             <LinearLayout
-                android:id="@+id/rowHomepage"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_address_bar"
-                android:padding="16dp"
-                android:layout_marginBottom="24dp">
+                android:layout_height="52dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_nav_button"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginBottom="12dp">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_home"
-                        android:layout_marginEnd="16dp"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Homepage"
-                        android:textColor="#FFFFFF"
-                        android:textSize="15sp"/>
-
-                </LinearLayout>
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_home"
+                    android:layout_marginEnd="12dp"/>
 
                 <EditText
                     android:id="@+id/etHomepage"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:hint="Enter homepage URL"
-                    android:textColorHint="#80CAF0F8"
-                    android:textColor="#CAF0F8"
-                    android:textSize="13sp"
+                    android:layout_weight="1"
+                    android:hint="Homepage URL"
+                    android:textColorHint="@color/textHint"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14sp"
                     android:background="@android:color/transparent"
-                    android:inputType="textUri"
                     android:singleLine="true"
                     android:imeOptions="actionDone"
-                    android:paddingStart="40dp"/>
+                    android:inputType="textUri"/>
 
             </LinearLayout>
 
-            <!-- SECTION: Display -->
+            <!-- APPEARANCE -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="DISPLAY"
-                android:textColor="#8090E0EF"
+                android:text="APPEARANCE"
+                android:textColor="@color/waterCyan"
                 android:textSize="11sp"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="8dp"
-                android:layout_marginStart="4dp"/>
+                android:textStyle="bold"
+                android:paddingStart="4dp"
+                android:paddingBottom="4dp"/>
 
-            <!-- Text Size -->
-            <LinearLayout
-                android:id="@+id/rowTextSize"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_address_bar"
-                android:padding="16dp"
-                android:layout_marginBottom="24dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_text_size"
-                        android:layout_marginEnd="16dp"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Text Size"
-                        android:textColor="#FFFFFF"
-                        android:textSize="15sp"/>
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="12dp"
-                    android:gravity="center">
-
-                    <Button
-                        android:id="@+id/btnTextSmall"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:text="Small"
-                        android:textSize="12sp"
-                        android:layout_marginEnd="6dp"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-                    <Button
-                        android:id="@+id/btnTextMedium"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:text="Medium"
-                        android:textSize="12sp"
-                        android:layout_marginEnd="6dp"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-                    <Button
-                        android:id="@+id/btnTextLarge"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:text="Large"
-                        android:textSize="12sp"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-            <!-- SECTION: Privacy -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="PRIVACY"
-                android:textColor="#8090E0EF"
-                android:textSize="11sp"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="8dp"
-                android:layout_marginStart="4dp"/>
-
-            <!-- JavaScript -->
+            <!-- Text size -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:background="@drawable/bg_address_bar"
-                android:padding="16dp"
-                android:layout_marginBottom="8dp">
+                android:background="@drawable/bg_nav_button"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginBottom="2dp">
 
                 <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_javascript"
-                    android:layout_marginEnd="16dp"/>
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_text_size"
+                    android:layout_marginEnd="12dp"/>
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:text="Text Size"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14sp"/>
+
+                <Button
+                    android:id="@+id/btnTextSmall"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:text="S"
+                    android:textSize="12sp"
+                    android:background="@android:color/transparent"
+                    android:layout_marginEnd="4dp"/>
+
+                <Button
+                    android:id="@+id/btnTextMedium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:text="M"
+                    android:textSize="12sp"
+                    android:background="@android:color/transparent"
+                    android:layout_marginEnd="4dp"/>
+
+                <Button
+                    android:id="@+id/btnTextLarge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:text="L"
+                    android:textSize="12sp"
+                    android:background="@android:color/transparent"/>
+
+            </LinearLayout>
+
+            <!-- Night Mode -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_nav_button"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginBottom="12dp">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_night_mode"
+                    android:layout_centerVertical="true"
+                    android:id="@+id/nightIcon"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_toEndOf="@id/nightIcon"
+                    android:layout_marginStart="12dp"
+                    android:text="Night Mode"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14sp"/>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchNightMode"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"/>
+
+            </RelativeLayout>
+
+            <!-- PRIVACY -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="PRIVACY"
+                android:textColor="@color/waterCyan"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:paddingStart="4dp"
+                android:paddingBottom="4dp"/>
+
+            <!-- JavaScript -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_nav_button"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginBottom="2dp">
+
+                <ImageView
+                    android:id="@+id/jsIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_javascript"
+                    android:layout_centerVertical="true"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_toEndOf="@id/jsIcon"
+                    android:layout_marginStart="12dp"
                     android:text="JavaScript"
-                    android:textColor="#FFFFFF"
-                    android:textSize="15sp"/>
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14sp"/>
 
                 <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switchJavascript"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:checked="true"/>
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"/>
 
-            </LinearLayout>
+            </RelativeLayout>
 
-            <!-- Clear History -->
+            <!-- Block Notifications -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_nav_button"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginBottom="2dp">
+
+                <ImageView
+                    android:id="@+id/notifIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_info"
+                    android:layout_centerVertical="true"/>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_toEndOf="@id/notifIcon"
+                    android:layout_marginStart="12dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Block Notification Popups"
+                        android:textColor="@color/textPrimary"
+                        android:textSize="14sp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Auto-deny permission requests"
+                        android:textColor="@color/textHint"
+                        android:textSize="11sp"/>
+
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchBlockNotifications"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"/>
+
+            </RelativeLayout>
+
+            <!-- Block Autoplay -->
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_nav_button"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginBottom="12dp">
+
+                <ImageView
+                    android:id="@+id/autoplayIcon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_refresh"
+                    android:layout_centerVertical="true"/>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:layout_toEndOf="@id/autoplayIcon"
+                    android:layout_marginStart="12dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Block Autoplay"
+                        android:textColor="@color/textPrimary"
+                        android:textSize="14sp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Require tap to play media"
+                        android:textColor="@color/textHint"
+                        android:textSize="11sp"/>
+
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchBlockAutoplay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"/>
+
+            </RelativeLayout>
+
+            <!-- DATA -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="DATA"
+                android:textColor="@color/waterCyan"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:paddingStart="4dp"
+                android:paddingBottom="4dp"/>
+
             <LinearLayout
                 android:id="@+id/rowClearHistory"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:background="@drawable/bg_address_bar"
-                android:padding="16dp"
-                android:layout_marginBottom="8dp">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_history"
-                    android:layout_marginEnd="16dp"/>
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Clear History"
-                    android:textColor="#FFFFFF"
-                    android:textSize="15sp"/>
+                android:background="@drawable/bg_nav_button"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginBottom="2dp">
 
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@drawable/ic_delete"
-                    android:alpha="0.6"/>
+                    android:src="@drawable/ic_history"
+                    android:layout_marginEnd="12dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Clear History"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14sp"/>
 
             </LinearLayout>
 
-            <!-- Clear Cache -->
             <LinearLayout
                 android:id="@+id/rowClearCache"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:background="@drawable/bg_address_bar"
-                android:padding="16dp"
-                android:layout_marginBottom="8dp">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_clear_all"
-                    android:layout_marginEnd="16dp"/>
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Clear Cache &amp; Cookies"
-                    android:textColor="#FFFFFF"
-                    android:textSize="15sp"/>
+                android:background="@drawable/bg_nav_button"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginBottom="2dp">
 
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@drawable/ic_delete"
-                    android:alpha="0.6"/>
+                    android:src="@drawable/ic_refresh"
+                    android:layout_marginEnd="12dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Clear Cache &amp; Cookies"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14sp"/>
 
             </LinearLayout>
 
-            <!-- Clear Bookmarks -->
             <LinearLayout
                 android:id="@+id/rowClearBookmarks"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:background="@drawable/bg_address_bar"
-                android:padding="16dp"
-                android:layout_marginBottom="24dp">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_bookmark"
-                    android:layout_marginEnd="16dp"/>
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Clear Bookmarks"
-                    android:textColor="#FFFFFF"
-                    android:textSize="15sp"/>
+                android:background="@drawable/bg_nav_button"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:layout_marginBottom="12dp">
 
                 <ImageView
                     android:layout_width="20dp"
                     android:layout_height="20dp"
-                    android:src="@drawable/ic_delete"
-                    android:alpha="0.6"/>
+                    android:src="@drawable/ic_bookmark"
+                    android:layout_marginEnd="12dp"/>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Clear Bookmarks"
+                    android:textColor="@color/textPrimary"
+                    android:textSize="14sp"/>
 
             </LinearLayout>
 
-            <!-- SECTION: About -->
+            <!-- ABOUT -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="ABOUT"
-                android:textColor="#8090E0EF"
+                android:textColor="@color/waterCyan"
                 android:textSize="11sp"
-                android:letterSpacing="0.15"
-                android:layout_marginBottom="8dp"
-                android:layout_marginStart="4dp"/>
+                android:textStyle="bold"
+                android:paddingStart="4dp"
+                android:paddingBottom="4dp"/>
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/bg_address_bar"
-                android:padding="16dp"
-                android:gravity="center">
+                android:layout_height="52dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_nav_button"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🌊 Brahman Browser"
-                    android:textColor="#CAF0F8"
-                    android:textSize="18sp"
-                    android:fontFamily="sans-serif-medium"/>
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@drawable/ic_info"
+                    android:layout_marginEnd="12dp"/>
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Version 1.0"
-                    android:textColor="#80CAF0F8"
-                    android:textSize="13sp"
-                    android:layout_marginTop="4dp"/>
+                    android:orientation="vertical">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="by Brahman Labs"
-                    android:textColor="#80CAF0F8"
-                    android:textSize="13sp"
-                    android:layout_marginTop="2dp"/>
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Brahman Browser"
+                        android:textColor="@color/textPrimary"
+                        android:textSize="14sp"/>
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Built with ❤️ in India"
-                    android:textColor="#60CAF0F8"
-                    android:textSize="12sp"
-                    android:layout_marginTop="8dp"/>
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Version 1.0 — by Brahman Labs"
+                        android:textColor="@color/textHint"
+                        android:textSize="11sp"/>
+
+                </LinearLayout>
 
             </LinearLayout>
 
         </LinearLayout>
+
     </ScrollView>
 
 </RelativeLayout>

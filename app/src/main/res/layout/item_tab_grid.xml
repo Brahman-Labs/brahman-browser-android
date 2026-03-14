@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="180dp"
+    android:background="@drawable/bg_nav_button"
+    android:layout_margin="6dp">
+
+    <!-- Tab content area -->
+    <LinearLayout
+        android:id="@+id/tabCardContent"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:layout_above="@id/tabCardFooter"
+        android:gravity="center"
+        android:padding="8dp">
+
+        <ImageView
+            android:id="@+id/tabGridFavicon"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:src="@drawable/ic_home"
+            android:contentDescription="Favicon"/>
+
+        <TextView
+            android:id="@+id/tabGridTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/textPrimary"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:maxLines="2"
+            android:ellipsize="end"/>
+
+        <TextView
+            android:id="@+id/tabGridUrl"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/textHint"
+            android:textSize="10sp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="middle"/>
+
+    </LinearLayout>
+
+    <!-- Footer bar -->
+    <RelativeLayout
+        android:id="@+id/tabCardFooter"
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:layout_alignParentBottom="true"
+        android:background="#1A00B4D8"
+        android:paddingStart="8dp"
+        android:paddingEnd="4dp">
+
+        <TextView
+            android:id="@+id/tabGridIncognito"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:text="Incognito"
+            android:textColor="@color/waterCyan"
+            android:textSize="9sp"
+            android:visibility="gone"/>
+
+        <ImageButton
+            android:id="@+id/btnCloseTabGrid"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/bg_nav_button"
+            android:src="@drawable/ic_close"
+            android:padding="7dp"
+            android:contentDescription="Close tab"/>
+
+    </RelativeLayout>
+
+    <!-- Active tab indicator -->
+    <View
+        android:id="@+id/tabActiveIndicator"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_alignParentTop="true"
+        android:background="@color/waterCyan"
+        android:visibility="gone"/>
+
+</RelativeLayout>

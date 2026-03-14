@@ -2,6 +2,8 @@ package com.brahmanlabs.browser
 
 import android.app.Activity
 import android.app.DownloadManager
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
@@ -17,6 +19,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.CookieManager
+import android.webkit.PermissionRequest
 import android.webkit.URLUtil
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -24,20 +27,24 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebStorage
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -63,6 +70,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnRefresh: ImageButton
     private lateinit var btnHome: ImageButton
     private lateinit var btnNewTab: ImageButton
+    private lateinit var btnTabGrid: ImageButton
     private lateinit var tabRecycler: RecyclerView
     private lateinit var findInPageBar: LinearLayout
     private lateinit var findInput: EditText
@@ -70,6 +78,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnFindPrev: ImageButton
     private lateinit var btnFindNext: ImageButton
     private lateinit var btnFindClose: ImageButton
+    private lateinit var tabGridOverlay: RelativeLayout
+    private lateinit var tabGridRecycler: RecyclerView
+    private lateinit var tabCountLabel: TextView
+    private lateinit var btnGridClose: ImageButton
+    private lateinit var btnGridNewTab: ImageButton
+    private lateinit var btnCloseAllTabs: Button
+    private lateinit var btnGridAddNewTab: Button
 
     private val tabManager = TabManager()
     private lateinit var browserAdapter: BrowserAdapter
@@ -102,6 +117,20 @@ class MainActivity : AppCompatActivity() {
     try{Object.defineProperty(navigator,'hardwareConcurrency',{get:function(){return 4;},configurable:true});}catch(e){}
     try{Object.defineProperty(screen,'colorDepth',{get:function(){return 24;},configurable:true});}catch(e){}
   }catch(e){}
+})();
+"""
+        private const val NIGHT_MODE_JS = """
+(function(){
+  var style = document.getElementById('__brahman_night__');
+  if(!style){
+    style = document.createElement('style');
+    style.id = '__brahman_night__';
+    document.head.appendChild(style);
+  }
+  style.textContent = `
+    html { filter: invert(1) hue-rotate(180deg) !important; }
+    img, video, canvas, iframe { filter: invert(1) hue-rotate(180deg) !important; }
+  `;
 })();
 """
     }
@@ -141,18 +170,16 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         db = BrahmanDatabase.getInstance(this)
         prefs = BrahmanPreferences.getInstance(this)
         adBlocker = AdBlocker.getInstance(this)
-
         bindViews()
         setupWindowInsets()
         setupWebView()
         applySettings()
         setupRecyclerView()
         setupListeners()
-
+        setupTabGrid()
         val urlToLoad = resolveIncomingIntent(intent) ?: NEW_TAB_URL
         val firstTab = BrowserTab(url = urlToLoad, webView = webView)
         tabManager.addTab(firstTab)
@@ -167,10 +194,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        handleForgetOnClose()
-    }
-
-    private fun handleForgetOnClose() {
         if (adBlocker.hasAnyForgetOnClose()) {
             tabManager.tabs.forEach { tab ->
                 if (adBlocker.isForgetOnClose(tab.url)) {
@@ -204,17 +227,23 @@ class MainActivity : AppCompatActivity() {
         webView.settings.apply {
             javaScriptEnabled = prefs.javascriptEnabled
             textZoom = prefs.textSize
+            mediaPlaybackRequiresUserGesture = prefs.blockAutoplay
         }
     }
 
     private fun applyShieldSettings(url: String) {
         if (url.startsWith("file://")) return
-        val scriptsBlocked = adBlocker.isScriptsBlocked(url)
         webView.settings.javaScriptEnabled =
-            if (scriptsBlocked) false else prefs.javascriptEnabled
+            if (adBlocker.isScriptsBlocked(url)) false else prefs.javascriptEnabled
         val cookiesBlocked = adBlocker.isCookiesBlocked(url)
         CookieManager.getInstance().setAcceptCookie(!cookiesBlocked)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, !cookiesBlocked)
+    }
+
+    private fun injectNightMode(view: WebView) {
+        if (prefs.nightModeEnabled) {
+            view.evaluateJavascript(NIGHT_MODE_JS, null)
+        }
     }
 
     private fun bindViews() {
@@ -236,6 +265,7 @@ class MainActivity : AppCompatActivity() {
         btnRefresh = findViewById(R.id.btnRefresh)
         btnHome = findViewById(R.id.btnHome)
         btnNewTab = findViewById(R.id.btnNewTab)
+        btnTabGrid = findViewById(R.id.btnTabGrid)
         tabRecycler = findViewById(R.id.tabRecycler)
         findInPageBar = findViewById(R.id.findInPageBar)
         findInput = findViewById(R.id.findInput)
@@ -243,6 +273,13 @@ class MainActivity : AppCompatActivity() {
         btnFindPrev = findViewById(R.id.btnFindPrev)
         btnFindNext = findViewById(R.id.btnFindNext)
         btnFindClose = findViewById(R.id.btnFindClose)
+        tabGridOverlay = findViewById(R.id.tabGridOverlay)
+        tabGridRecycler = findViewById(R.id.tabGridRecycler)
+        tabCountLabel = findViewById(R.id.tabCountLabel)
+        btnGridClose = findViewById(R.id.btnGridClose)
+        btnGridNewTab = findViewById(R.id.btnGridNewTab)
+        btnCloseAllTabs = findViewById(R.id.btnCloseAllTabs)
+        btnGridAddNewTab = findViewById(R.id.btnGridAddNewTab)
     }
 
     private fun setupWebView() {
@@ -256,6 +293,7 @@ class MainActivity : AppCompatActivity() {
             displayZoomControls = false
             allowFileAccess = true
             textZoom = prefs.textSize
+            mediaPlaybackRequiresUserGesture = prefs.blockAutoplay
         }
 
         webView.addJavascriptInterface(object {
@@ -264,6 +302,26 @@ class MainActivity : AppCompatActivity() {
             @android.webkit.JavascriptInterface
             fun getSearchEngine(): String = prefs.searchEngine
         }, "BrahmanBridge")
+
+        // Long press link handler
+        webView.setOnLongClickListener {
+            val result = webView.hitTestResult
+            val type = result.type
+            val extra = result.extra ?: return@setOnLongClickListener false
+
+            when (type) {
+                WebView.HitTestResult.SRC_ANCHOR_TYPE,
+                WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
+                    showLinkOptions(extra)
+                    true
+                }
+                WebView.HitTestResult.IMAGE_TYPE -> {
+                    showImageOptions(extra)
+                    true
+                }
+                else -> false
+            }
+        }
 
         webView.webViewClient = object : WebViewClient() {
 
@@ -286,12 +344,10 @@ class MainActivity : AppCompatActivity() {
                 val url = request.url.toString()
                 if (url.startsWith("file://")) return false
                 if (url.startsWith("javascript:") || url.startsWith("data:")) return false
-                // HTTPS Upgrade
                 if (url.startsWith("http://")) {
                     val pageUrl = tabManager.getCurrentTab()?.url ?: ""
                     if (adBlocker.isShieldsEnabled(pageUrl) && adBlocker.isHttpsUpgradeEnabled(pageUrl)) {
-                        val httpsUrl = url.replaceFirst("http://", "https://")
-                        loadUrl(httpsUrl)
+                        loadUrl(url.replaceFirst("http://", "https://"))
                         return true
                     }
                 }
@@ -330,10 +386,10 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     addressBar.setText(extractDomain(url))
                     updateBookmarkIcon(url)
-                    // Fingerprinting protection injection
                     if (adBlocker.isShieldsEnabled(url) && adBlocker.isFingerprintingBlocked(url)) {
                         view.evaluateJavascript(FP_JS, null)
                     }
+                    injectNightMode(view)
                 }
                 if (!isNewTab && tabManager.getCurrentTab()?.isIncognito == false) {
                     historyDebounceRunnable?.let { historyDebounceHandler.removeCallbacks(it) }
@@ -362,6 +418,13 @@ class MainActivity : AppCompatActivity() {
                 tabManager.getCurrentTab()?.favicon = icon
                 browserAdapter.notifyItemChanged(tabManager.getCurrentTabIndex())
             }
+            override fun onPermissionRequest(request: PermissionRequest) {
+                if (prefs.blockNotifications) {
+                    request.deny()
+                } else {
+                    request.grant(request.resources)
+                }
+            }
         }
 
         webView.setFindListener { activeMatchOrdinal, numberOfMatches, _ ->
@@ -387,19 +450,139 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun showLinkOptions(url: String) {
+        val options = arrayOf("Open in New Tab", "Copy Link", "Share Link", "Download Link")
+        AlertDialog.Builder(this)
+            .setTitle(extractDomain(url))
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> {
+                        val newTab = BrowserTab(url = url)
+                        tabManager.addTab(newTab)
+                        browserAdapter.notifyDataSetChanged()
+                        tabRecycler.scrollToPosition(tabManager.tabs.lastIndex)
+                        Toast.makeText(this, "Opened in new tab", Toast.LENGTH_SHORT).show()
+                    }
+                    1 -> {
+                        val cm = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                        cm.setPrimaryClip(ClipData.newPlainText("link", url))
+                        Toast.makeText(this, "Link copied", Toast.LENGTH_SHORT).show()
+                    }
+                    2 -> {
+                        val share = Intent(Intent.ACTION_SEND).apply {
+                            type = "text/plain"
+                            putExtra(Intent.EXTRA_TEXT, url)
+                        }
+                        startActivity(Intent.createChooser(share, "Share link"))
+                    }
+                    3 -> {
+                        val fileName = URLUtil.guessFileName(url, null, null)
+                        val req = DownloadManager.Request(Uri.parse(url))
+                        req.setTitle(fileName)
+                        req.setDescription("Downloading...")
+                        req.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                        req.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                        val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+                        dm.enqueue(req)
+                        Toast.makeText(this, "Downloading: $fileName", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }.show()
+    }
+
+    private fun showImageOptions(url: String) {
+        val options = arrayOf("Open Image", "Copy Image URL", "Download Image")
+        AlertDialog.Builder(this)
+            .setTitle("Image")
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> loadUrl(url)
+                    1 -> {
+                        val cm = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+                        cm.setPrimaryClip(ClipData.newPlainText("image url", url))
+                        Toast.makeText(this, "Image URL copied", Toast.LENGTH_SHORT).show()
+                    }
+                    2 -> {
+                        val fileName = URLUtil.guessFileName(url, null, "image/*")
+                        val req = DownloadManager.Request(Uri.parse(url))
+                        req.setTitle(fileName)
+                        req.setDescription("Downloading image...")
+                        req.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                        req.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                        val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+                        dm.enqueue(req)
+                        Toast.makeText(this, "Downloading image", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }.show()
+    }
+
+    private fun setupTabGrid() {
+        tabGridRecycler.layoutManager = GridLayoutManager(this, 2)
+    }
+
+    private fun openTabGrid() {
+        refreshTabGrid()
+        tabGridOverlay.visibility = View.VISIBLE
+        hideKeyboard()
+    }
+
+    private fun closeTabGrid() {
+        tabGridOverlay.visibility = View.GONE
+    }
+
+    private fun refreshTabGrid() {
+        val count = tabManager.tabs.size
+        tabCountLabel.text = "$count tab${if (count != 1) "s" else ""} open"
+        tabGridRecycler.adapter = TabGridAdapter(
+            tabs = tabManager.tabs,
+            activeIndex = tabManager.getCurrentTabIndex(),
+            onTabClick = { index ->
+                tabManager.switchToTab(index)
+                val url = tabManager.getCurrentTab()?.url ?: NEW_TAB_URL
+                loadUrl(url)
+                updateAddressBarForUrl(url)
+                updateShieldIcon(url)
+                browserAdapter.notifyDataSetChanged()
+                closeTabGrid()
+            },
+            onTabClose = { index ->
+                val tab = tabManager.tabs.getOrNull(index)
+                if (tab != null && adBlocker.isForgetOnClose(tab.url)) {
+                    CookieManager.getInstance().removeAllCookies(null)
+                    CookieManager.getInstance().flush()
+                }
+                tabManager.removeTab(index)
+                browserAdapter.notifyDataSetChanged()
+                if (tabManager.tabs.isEmpty()) { addNewTab(); closeTabGrid() }
+                else { loadUrl(tabManager.getCurrentTab()?.url ?: NEW_TAB_URL); refreshTabGrid() }
+            }
+        )
+    }
+
+    private fun updateAddressBarForUrl(url: String) {
+        val isNewTab = url.startsWith("file://")
+        addressBarRow.visibility = if (isNewTab) View.GONE else View.VISIBLE
+        if (isNewTab) {
+            addressBar.setText(""); addressBar.hint = "Search or type URL"
+            lockIcon.visibility = View.GONE
+            btnBookmark.setImageResource(R.drawable.ic_bookmark); btnBookmark.alpha = 0.4f
+        } else {
+            addressBar.setText(extractDomain(url))
+            updateBookmarkIcon(url)
+        }
+    }
+
     private fun updateShieldBadge() {
         val count = adBlocker.getBlockedCount()
         if (count > 0) {
             shieldBadge.visibility = View.VISIBLE
             shieldBadge.text = if (count > 99) "99" else count.toString()
-        } else {
-            shieldBadge.visibility = View.GONE
-        }
+        } else shieldBadge.visibility = View.GONE
     }
 
     private fun updateShieldIcon(url: String) {
-        val enabled = adBlocker.isShieldsEnabled(url)
-        btnShield.alpha = if (enabled) 1.0f else 0.4f
+        btnShield.alpha = if (adBlocker.isShieldsEnabled(url)) 1.0f else 0.4f
     }
 
     private fun openFindInPage() {
@@ -407,15 +590,12 @@ class MainActivity : AppCompatActivity() {
         findInput.requestFocus()
         val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
         imm.showSoftInput(findInput, InputMethodManager.SHOW_IMPLICIT)
-        findInput.text.clear()
-        findMatchCount.text = ""
+        findInput.text.clear(); findMatchCount.text = ""
     }
 
     private fun closeFindInPage() {
         findInPageBar.visibility = View.GONE
-        webView.clearMatches()
-        findInput.text.clear()
-        findMatchCount.text = ""
+        webView.clearMatches(); findInput.text.clear(); findMatchCount.text = ""
         hideKeyboard()
     }
 
@@ -435,21 +615,11 @@ class MainActivity : AppCompatActivity() {
             onTabClick = { index ->
                 tabManager.switchToTab(index)
                 val url = tabManager.getCurrentTab()?.url ?: NEW_TAB_URL
-                val isNewTab = url.startsWith("file://")
-                addressBarRow.visibility = if (isNewTab) View.GONE else View.VISIBLE
-                if (isNewTab) {
-                    addressBar.setText(""); addressBar.hint = "Search or type URL"
-                    lockIcon.visibility = View.GONE
-                    btnBookmark.setImageResource(R.drawable.ic_bookmark); btnBookmark.alpha = 0.4f
-                } else {
-                    addressBar.setText(extractDomain(url))
-                    updateBookmarkIcon(url)
-                }
+                updateAddressBarForUrl(url)
                 updateShieldIcon(url)
                 loadUrl(url)
             },
             onTabClose = { index ->
-                // handle forget on close for this tab
                 val tab = tabManager.tabs.getOrNull(index)
                 if (tab != null && adBlocker.isForgetOnClose(tab.url)) {
                     CookieManager.getInstance().removeAllCookies(null)
@@ -511,9 +681,23 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             ShieldsPanel(this, currentUrl, adBlocker) {
-                updateShieldIcon(currentUrl)
-                webView.reload()
+                updateShieldIcon(currentUrl); webView.reload()
             }.show()
+        }
+
+        btnTabGrid.setOnClickListener { openTabGrid() }
+        btnGridClose.setOnClickListener { closeTabGrid() }
+        btnGridNewTab.setOnClickListener { addNewTab(); closeTabGrid() }
+        btnGridAddNewTab.setOnClickListener { addNewTab(); closeTabGrid() }
+        btnCloseAllTabs.setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle("Close All Tabs")
+                .setMessage("Close all ${tabManager.tabs.size} tabs?")
+                .setPositiveButton("Close All") { _, _ ->
+                    tabManager.tabs.clear()
+                    browserAdapter.notifyDataSetChanged()
+                    addNewTab(); closeTabGrid()
+                }.setNegativeButton("Cancel", null).show()
         }
 
         btnBack.setOnClickListener { if (webView.canGoBack()) webView.goBack() }
@@ -549,7 +733,6 @@ class MainActivity : AppCompatActivity() {
             }
             override fun afterTextChanged(s: Editable?) {}
         })
-
         findInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) { webView.findNext(true); true } else false
         }
@@ -577,8 +760,7 @@ class MainActivity : AppCompatActivity() {
                             Toast.makeText(this, "Nothing to share", Toast.LENGTH_SHORT).show()
                         } else {
                             val share = Intent(Intent.ACTION_SEND).apply {
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, currentUrl)
+                                type = "text/plain"; putExtra(Intent.EXTRA_TEXT, currentUrl)
                             }
                             startActivity(Intent.createChooser(share, "Share URL"))
                         }
@@ -601,8 +783,7 @@ class MainActivity : AppCompatActivity() {
     private fun addNewTab() {
         webView.settings.userAgentString = ""
         btnDesktop.alpha = 0.5f
-        val newTab = BrowserTab(url = NEW_TAB_URL)
-        tabManager.addTab(newTab)
+        tabManager.addTab(BrowserTab(url = NEW_TAB_URL))
         browserAdapter.notifyDataSetChanged()
         loadUrl(NEW_TAB_URL)
         tabRecycler.scrollToPosition(tabManager.tabs.lastIndex)
@@ -627,7 +808,7 @@ class MainActivity : AppCompatActivity() {
             addressBar.setText(""); addressBar.hint = "Search or type URL"
             lockIcon.visibility = View.GONE
             btnBookmark.setImageResource(R.drawable.ic_bookmark); btnBookmark.alpha = 0.4f
-        } else { addressBar.setText(extractDomain(url)) }
+        } else addressBar.setText(extractDomain(url))
     }
 
     private fun updateNavButtons() {
@@ -643,6 +824,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
+            if (tabGridOverlay.visibility == View.VISIBLE) { closeTabGrid(); return true }
             if (findInPageBar.visibility == View.VISIBLE) { closeFindInPage(); return true }
             if (webView.canGoBack()) { webView.goBack(); return true }
         }

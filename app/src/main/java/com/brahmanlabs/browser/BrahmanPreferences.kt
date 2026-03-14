@@ -14,6 +14,9 @@ class BrahmanPreferences(context: Context) {
         const val KEY_HOMEPAGE = "homepage"
         const val KEY_TEXT_SIZE = "text_size"
         const val KEY_JAVASCRIPT = "javascript_enabled"
+        const val KEY_NIGHT_MODE = "night_mode"
+        const val KEY_BLOCK_AUTOPLAY = "block_autoplay"
+        const val KEY_BLOCK_NOTIFICATIONS = "block_notifications"
 
         const val ENGINE_GOOGLE = "google"
         const val ENGINE_BING = "bing"
@@ -49,6 +52,18 @@ class BrahmanPreferences(context: Context) {
     var javascriptEnabled: Boolean
         get() = prefs.getBoolean(KEY_JAVASCRIPT, true)
         set(value) = prefs.edit().putBoolean(KEY_JAVASCRIPT, value).apply()
+
+    var nightModeEnabled: Boolean
+        get() = prefs.getBoolean(KEY_NIGHT_MODE, false)
+        set(value) = prefs.edit().putBoolean(KEY_NIGHT_MODE, value).apply()
+
+    var blockAutoplay: Boolean
+        get() = prefs.getBoolean(KEY_BLOCK_AUTOPLAY, true)
+        set(value) = prefs.edit().putBoolean(KEY_BLOCK_AUTOPLAY, value).apply()
+
+    var blockNotifications: Boolean
+        get() = prefs.getBoolean(KEY_BLOCK_NOTIFICATIONS, true)
+        set(value) = prefs.edit().putBoolean(KEY_BLOCK_NOTIFICATIONS, value).apply()
 
     fun getSearchUrl(query: String): String {
         val encoded = query.replace(" ", "+")

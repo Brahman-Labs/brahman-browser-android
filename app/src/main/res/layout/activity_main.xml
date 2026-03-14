@@ -130,6 +130,14 @@
             android:layout_width="0dp" android:layout_height="match_parent"
             android:layout_weight="1" android:clipToPadding="false"/>
 
+        <ImageButton android:id="@+id/btnTabGrid"
+            android:layout_width="36dp" android:layout_height="36dp"
+            android:background="@drawable/bg_tab_item"
+            android:src="@drawable/ic_tab_grid"
+            android:padding="9dp"
+            android:layout_marginEnd="4dp"
+            android:contentDescription="Tab Grid"/>
+
         <ImageButton android:id="@+id/btnNewTab"
             android:layout_width="36dp" android:layout_height="36dp"
             android:background="@drawable/bg_tab_item"
@@ -172,32 +180,27 @@
 
         <TextView android:id="@+id/findMatchCount"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:textColor="#8090E0EF"
-            android:textSize="12sp"
-            android:layout_marginStart="6dp"
-            android:text=""/>
+            android:textColor="#8090E0EF" android:textSize="12sp"
+            android:layout_marginStart="6dp" android:text=""/>
 
         <ImageButton android:id="@+id/btnFindPrev"
             android:layout_width="36dp" android:layout_height="36dp"
             android:background="@drawable/bg_nav_button"
-            android:src="@drawable/ic_back"
-            android:padding="10dp"
+            android:src="@drawable/ic_back" android:padding="10dp"
             android:layout_marginStart="4dp"
             android:contentDescription="Previous match"/>
 
         <ImageButton android:id="@+id/btnFindNext"
             android:layout_width="36dp" android:layout_height="36dp"
             android:background="@drawable/bg_nav_button"
-            android:src="@drawable/ic_forward"
-            android:padding="10dp"
+            android:src="@drawable/ic_forward" android:padding="10dp"
             android:layout_marginStart="4dp"
             android:contentDescription="Next match"/>
 
         <ImageButton android:id="@+id/btnFindClose"
             android:layout_width="36dp" android:layout_height="36dp"
             android:background="@drawable/bg_nav_button"
-            android:src="@drawable/ic_close"
-            android:padding="10dp"
+            android:src="@drawable/ic_close" android:padding="10dp"
             android:layout_marginStart="4dp"
             android:contentDescription="Close find bar"/>
 
@@ -239,5 +242,120 @@
         </LinearLayout>
 
     </LinearLayout>
+
+    <!-- Tab Grid Overlay — full screen, hidden by default -->
+    <RelativeLayout
+        android:id="@+id/tabGridOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_water_gradient"
+        android:visibility="gone">
+
+        <!-- Grid top bar -->
+        <RelativeLayout
+            android:id="@+id/gridTopBar"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_alignParentTop="true"
+            android:background="@drawable/bg_top_bar"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="All Tabs"
+                android:textColor="@color/textPrimary"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <ImageButton
+                android:id="@+id/btnGridClose"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_nav_button"
+                android:src="@drawable/ic_close"
+                android:padding="10dp"
+                android:contentDescription="Close grid"/>
+
+            <ImageButton
+                android:id="@+id/btnGridNewTab"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_nav_button"
+                android:src="@drawable/ic_add_tab"
+                android:padding="10dp"
+                android:contentDescription="New tab"/>
+
+        </RelativeLayout>
+
+        <!-- Tab count label -->
+        <TextView
+            android:id="@+id/tabCountLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/gridTopBar"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="4dp"
+            android:gravity="center"
+            android:textColor="@color/textHint"
+            android:textSize="12sp"/>
+
+        <!-- Grid RecyclerView -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/tabGridRecycler"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@id/tabCountLabel"
+            android:layout_above="@id/gridBottomBar"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:paddingTop="4dp"
+            android:clipToPadding="false"/>
+
+        <!-- Grid bottom bar -->
+        <LinearLayout
+            android:id="@+id/gridBottomBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:background="@drawable/bg_top_bar"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <Button
+                android:id="@+id/btnCloseAllTabs"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Close All"
+                android:textColor="@color/insecureRed"
+                android:textSize="13sp"
+                android:background="@drawable/bg_nav_button"/>
+
+            <Button
+                android:id="@+id/btnGridAddNewTab"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="+ New Tab"
+                android:textColor="@color/waterCyan"
+                android:textSize="13sp"
+                android:background="@drawable/bg_nav_button"/>
+
+        </LinearLayout>
+
+    </RelativeLayout>
 
 </RelativeLayout>
