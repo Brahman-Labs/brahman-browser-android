@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Page Not Available</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: linear-gradient(160deg, #050E1F 0%, #0A2A4A 60%, #0D3D6B 100%);
+    min-height: 100vh;
+    font-family: -apple-system, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    color: #CAF0F8;
+  }
+  .icon { font-size: 64px; margin-bottom: 20px; }
+  h1 { color: #00B4D8; font-size: 22px; margin-bottom: 10px; text-align: center; }
+  .url {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(0,180,216,0.2);
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: #90E0EF;
+    word-break: break-all;
+    text-align: center;
+    margin: 10px 0 20px;
+    max-width: 100%;
+  }
+  .desc { color: #4090A0; font-size: 14px; text-align: center; margin-bottom: 30px; line-height: 1.6; }
+  .btn {
+    background: rgba(0,180,216,0.15);
+    border: 1px solid rgba(0,180,216,0.4);
+    border-radius: 24px;
+    color: #00B4D8;
+    font-size: 15px;
+    padding: 12px 32px;
+    cursor: pointer;
+    margin: 6px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { background: rgba(0,180,216,0.3); }
+  .buttons { display: flex; flex-wrap: wrap; justify-content: center; }
+</style>
+</head>
+<body>
+  <div class="icon">🌊</div>
+  <h1>Page Not Available</h1>
+  <div class="url" id="errorUrl"></div>
+  <div class="desc" id="errorDesc">This page could not be loaded.<br>Check your internet connection and try again.</div>
+  <div class="buttons">
+    <button class="btn" onclick="tryReload()">Try Again</button>
+    <button class="btn" onclick="goHome()">Go Home</button>
+  </div>
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var url = params.get('url') || '';
+    var err = params.get('error') || '';
+    document.getElementById('errorUrl').textContent = url || 'Unknown URL';
+    if (err) {
+      document.getElementById('errorDesc').textContent = err;
+    }
+    function tryReload() {
+      if (url) { try { window.BrahmanBridge.loadUrl(url); } catch(e) {} }
+    }
+    function goHome() {
+      try { window.BrahmanBridge.loadUrl('file:///android_asset/newtab.html'); } catch(e) {}
+    }
+  </script>
+</body>
+</html>

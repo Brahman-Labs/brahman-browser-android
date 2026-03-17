@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="new_tab"
+        android:enabled="true"
+        android:icon="@drawable/ic_add_tab"
+        android:shortcutShortLabel="@string/shortcut_new_tab"
+        android:shortcutLongLabel="@string/shortcut_new_tab_long">
+        <intent
+            android:action="com.brahmanlabs.browser.NEW_TAB"
+            android:targetPackage="com.brahmanlabs.browser"
+            android:targetClass="com.brahmanlabs.browser.MainActivity"/>
+    </shortcut>
+    <shortcut
+        android:shortcutId="incognito_tab"
+        android:enabled="true"
+        android:icon="@drawable/ic_incognito"
+        android:shortcutShortLabel="@string/shortcut_incognito"
+        android:shortcutLongLabel="@string/shortcut_incognito_long">
+        <intent
+            android:action="com.brahmanlabs.browser.INCOGNITO"
+            android:targetPackage="com.brahmanlabs.browser"
+            android:targetClass="com.brahmanlabs.browser.MainActivity"/>
+    </shortcut>
+    <shortcut
+        android:shortcutId="qr_scan"
+        android:enabled="true"
+        android:icon="@drawable/ic_qr_scan"
+        android:shortcutShortLabel="@string/shortcut_qr"
+        android:shortcutLongLabel="@string/shortcut_qr_long">
+        <intent
+            android:action="com.brahmanlabs.browser.QR_SCAN"
+            android:targetPackage="com.brahmanlabs.browser"
+            android:targetClass="com.brahmanlabs.browser.MainActivity"/>
+    </shortcut>
+</shortcuts>
